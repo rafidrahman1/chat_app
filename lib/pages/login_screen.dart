@@ -1,6 +1,5 @@
 import 'package:deadshot/components/my_button.dart';
 import 'package:deadshot/components/my_textfield.dart';
-import 'package:deadshot/pages/register_page.dart';
 import 'package:flutter/material.dart';
 
 class LoginScreen extends StatelessWidget {
@@ -8,7 +7,9 @@ class LoginScreen extends StatelessWidget {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  LoginScreen({super.key});
+  final void Function()? onTap;
+
+  LoginScreen({super.key, required this.onTap});
 
   //login method
   void login() {
@@ -32,7 +33,11 @@ class LoginScreen extends StatelessWidget {
             MyTextfield(hintText: 'Email', controller: _emailController),
 
             //password textfield
-            MyTextfield(hintText: 'Password', obscureText: true, controller: _passwordController),
+            MyTextfield(
+              hintText: 'Password',
+              obscureText: true,
+              controller: _passwordController,
+            ),
 
             //login button
             MyButton(text: 'Login', onTap: login),
@@ -46,12 +51,13 @@ class LoginScreen extends StatelessWidget {
                 Text('Not a member?', style: TextStyle(color: Colors.white)),
                 SizedBox(width: 4),
                 GestureDetector(
-                  onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => RegisterScreen()));
-                  },
+                  onTap: onTap,
                   child: Text(
                     'Register now',
-                    style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      color: Colors.redAccent,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],

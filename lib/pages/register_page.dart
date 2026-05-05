@@ -7,9 +7,12 @@ class RegisterScreen extends StatelessWidget {
   //email, password and confirm password text editing controllers
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
 
-  RegisterScreen({super.key});
+  final void Function()? onTap;
+
+  RegisterScreen({super.key, required this.onTap});
 
   //register method
   void register() {
@@ -33,10 +36,18 @@ class RegisterScreen extends StatelessWidget {
             MyTextfield(hintText: 'Email', controller: _emailController),
 
             //password textfield
-            MyTextfield(hintText: 'Password', obscureText: true, controller: _passwordController),
+            MyTextfield(
+              hintText: 'Password',
+              obscureText: true,
+              controller: _passwordController,
+            ),
 
             //confirm password textfield
-            MyTextfield(hintText: 'Confirm Password', obscureText: true, controller: _confirmPasswordController),
+            MyTextfield(
+              hintText: 'Confirm Password',
+              obscureText: true,
+              controller: _confirmPasswordController,
+            ),
 
             //register button
             MyButton(text: 'Register', onTap: register),
@@ -47,15 +58,19 @@ class RegisterScreen extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text('Already a member?', style: TextStyle(color: Colors.white)),
+                Text(
+                  'Already a member?',
+                  style: TextStyle(color: Colors.white),
+                ),
                 SizedBox(width: 4),
                 GestureDetector(
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
+                  onTap: onTap,
                   child: Text(
                     'Login now',
-                    style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      color: Colors.redAccent,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
