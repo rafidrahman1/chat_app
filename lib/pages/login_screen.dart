@@ -19,25 +19,31 @@ class LoginScreen extends StatelessWidget {
 
     //try login
     try {
-      authService.signInWithEmailAndPassword(_emailController.text, _passwordController.text);
+      authService.signInWithEmailAndPassword(
+        _emailController.text,
+        _passwordController.text,
+      );
     } catch (e) {
       showDialog(
         context: context,
-        builder: (context) => AlertDialog(title: Text('Error'), content: Text(e.toString())),
+        builder: (context) =>
+            AlertDialog(title: Text('Error'), content: Text(e.toString())),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: colorScheme.primary,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             //logo
-            Icon(Icons.message, size: 60, color: Colors.grey),
+            Icon(Icons.message, size: 60, color: colorScheme.tertiary),
 
             SizedBox(height: 20),
 
@@ -45,7 +51,11 @@ class LoginScreen extends StatelessWidget {
             MyTextfield(hintText: 'Email', controller: _emailController),
 
             //password textfield
-            MyTextfield(hintText: 'Password', obscureText: true, controller: _passwordController),
+            MyTextfield(
+              hintText: 'Password',
+              obscureText: true,
+              controller: _passwordController,
+            ),
 
             //login button
             MyButton(text: 'Login', onTap: () => login(context)),
@@ -56,13 +66,19 @@ class LoginScreen extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text('Not a member?', style: TextStyle(color: Colors.white)),
+                Text(
+                  'Not a member?',
+                  style: TextStyle(color: colorScheme.onSurface),
+                ),
                 SizedBox(width: 4),
                 GestureDetector(
                   onTap: onTap,
                   child: Text(
                     'Register now',
-                    style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      color: colorScheme.secondary,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
