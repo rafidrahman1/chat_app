@@ -1,3 +1,4 @@
+import 'package:deadshot/auth/auth_service.dart';
 import 'package:deadshot/components/my_button.dart';
 import 'package:deadshot/components/my_textfield.dart';
 import 'package:flutter/material.dart';
@@ -12,8 +13,19 @@ class LoginScreen extends StatelessWidget {
   LoginScreen({super.key, required this.onTap});
 
   //login method
-  void login() {
-    print('Login button tapped');
+  void login(BuildContext context) {
+    //auth service
+    final authService = AuthService();
+
+    //try login
+    try {
+      authService.signInWithEmailAndPassword(_emailController.text, _passwordController.text);
+    } catch (e) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(title: Text('Error'), content: Text(e.toString())),
+      );
+    }
   }
 
   @override
@@ -33,14 +45,10 @@ class LoginScreen extends StatelessWidget {
             MyTextfield(hintText: 'Email', controller: _emailController),
 
             //password textfield
-            MyTextfield(
-              hintText: 'Password',
-              obscureText: true,
-              controller: _passwordController,
-            ),
+            MyTextfield(hintText: 'Password', obscureText: true, controller: _passwordController),
 
             //login button
-            MyButton(text: 'Login', onTap: login),
+            MyButton(text: 'Login', onTap: () => login(context)),
 
             SizedBox(height: 20),
 
@@ -54,10 +62,7 @@ class LoginScreen extends StatelessWidget {
                   onTap: onTap,
                   child: Text(
                     'Register now',
-                    style: TextStyle(
-                      color: Colors.redAccent,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
                   ),
                 ),
               ],

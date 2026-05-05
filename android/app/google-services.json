@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "502540128160",
+    "project_id": "deadshotstack",
+    "storage_bucket": "deadshotstack.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:502540128160:android:89fd4da5d2c156adad9ec5",
+        "android_client_info": {
+          "package_name": "com.example.deadshot"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAxl1ZmaISFckQf4rq2LAOrybADm2apaSo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

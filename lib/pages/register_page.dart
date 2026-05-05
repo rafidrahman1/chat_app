@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../auth/auth_service.dart';
 import '../components/my_button.dart';
 import '../components/my_textfield.dart';
 
@@ -7,16 +8,32 @@ class RegisterScreen extends StatelessWidget {
   //email, password and confirm password text editing controllers
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController =
-      TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
 
   final void Function()? onTap;
 
   RegisterScreen({super.key, required this.onTap});
 
   //register method
-  void register() {
-    print('Register button tapped');
+  void register(BuildContext context) {
+    final _auth = AuthService();
+
+    //password confirmation
+    if (_passwordController.text != _confirmPasswordController.text) {
+      try {
+        _auth.createUserWithEmailAndPassword(_emailController.text, _passwordController.text);
+      } catch (e) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(title: Text('Error'), content: Text(e.toString())),
+        );
+      }
+    } else {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(title: Text('Error'), content: Text('Passwords do not match')),
+      );
+    }
   }
 
   @override
@@ -36,21 +53,13 @@ class RegisterScreen extends StatelessWidget {
             MyTextfield(hintText: 'Email', controller: _emailController),
 
             //password textfield
-            MyTextfield(
-              hintText: 'Password',
-              obscureText: true,
-              controller: _passwordController,
-            ),
+            MyTextfield(hintText: 'Password', obscureText: true, controller: _passwordController),
 
             //confirm password textfield
-            MyTextfield(
-              hintText: 'Confirm Password',
-              obscureText: true,
-              controller: _confirmPasswordController,
-            ),
+            MyTextfield(hintText: 'Confirm Password', obscureText: true, controller: _confirmPasswordController),
 
             //register button
-            MyButton(text: 'Register', onTap: register),
+            MyButton(text: 'Register', onTap: () => register(context)),
 
             SizedBox(height: 20),
 
@@ -58,19 +67,13 @@ class RegisterScreen extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(
-                  'Already a member?',
-                  style: TextStyle(color: Colors.white),
-                ),
+                Text('Already a member?', style: TextStyle(color: Colors.white)),
                 SizedBox(width: 4),
                 GestureDetector(
                   onTap: onTap,
                   child: Text(
                     'Login now',
-                    style: TextStyle(
-                      color: Colors.redAccent,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
