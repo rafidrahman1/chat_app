@@ -1,4 +1,4 @@
-import 'package:deadshot/auth/auth_gate.dart';
+import 'package:deadshot/services/auth/auth_gate.dart';
 import 'package:deadshot/theme/app_theme.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -16,10 +16,6 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.darkTheme,
-      home: const AuthGate(),
-    );
+    return MaterialApp(debugShowCheckedModeBanner: false, theme: AppTheme.darkTheme, home: const AuthGate());
   }
 }
