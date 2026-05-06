@@ -1,22 +1,31 @@
 import 'package:flutter/material.dart';
 
-class GoogleSignIn extends StatelessWidget {
-  const GoogleSignIn({super.key});
+import '../services/auth/auth_service.dart';
+
+class GoogleSignInButton extends StatelessWidget {
+  const GoogleSignInButton({super.key});
 
   @override
+  //handle google sign in
   Widget build(BuildContext context) {
+    Future<void> handleGoogleSignIn() async {
+      try {
+        await AuthService().signInWithGoogle();
+      } catch (e) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Google sign in failed: $e')));
+      }
+    }
+
     return ElevatedButton(
-      onPressed: () {},
-      style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent[400]),
+      onPressed: handleGoogleSignIn,
+      style: ElevatedButton.styleFrom(backgroundColor: Colors.red[50]),
       child: Padding(
         padding: const EdgeInsets.all(8.0),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Image.asset('assets/images/google_logo.png', height: 40),
-            SizedBox(width: 10),
-            Text('Sign in with Google', style: TextStyle(color: Colors.white)),
-          ],
+          spacing: 15,
+          children: [Image.asset('assets/images/google_logo.png', height: 40), Text('Sign in with Google')],
         ),
       ),
     );

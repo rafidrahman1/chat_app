@@ -1,16 +1,9 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import '../pages/settings_screen.dart';
+import '../services/auth/auth_service.dart';
 
 class MyDrawer extends StatelessWidget {
   const MyDrawer({super.key});
-
-  //logout function
-  void logout() {
-    final _auth = FirebaseAuth.instance;
-    _auth.signOut();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +34,7 @@ class MyDrawer extends StatelessWidget {
             title: Text('Settings', style: TextStyle(color: colorScheme.onSurface)),
             onTap: () {
               Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsScreen()));
+              Navigator.pushNamed(context, '/settings');
             },
           ),
           Expanded(child: SizedBox()),
@@ -50,7 +43,10 @@ class MyDrawer extends StatelessWidget {
             child: ListTile(
               leading: Icon(Icons.logout, color: colorScheme.onSurface),
               title: Text('Logout', style: TextStyle(color: colorScheme.onSurface)),
-              onTap: logout,
+              onTap: () async {
+                await AuthService().signOut();
+                if (context.mounted) Navigator.pop(context);
+              },
             ),
           ),
         ],

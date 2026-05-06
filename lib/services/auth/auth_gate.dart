@@ -1,4 +1,4 @@
-import 'package:deadshot/services/auth/login_or_register.dart';
+import 'package:deadshot/pages/login_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -15,11 +15,11 @@ class AuthGate extends StatelessWidget {
         builder: (context, snapshot) {
           //user is logged in
           if (snapshot.hasData) {
-            return HomeScreen();
+            return const HomeScreen();
           }
           //user is not logged in
           else {
-            return const LoginOrRegister();
+            return const LoginScreen();
           }
         },
       ),

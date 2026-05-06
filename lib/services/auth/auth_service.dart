@@ -1,59 +1,33 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthService {
-  //instance of the auth & firestore
+  //instance of the auth
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  //Sign in
-  Future<UserCredential> signInWithEmailAndPassword(
-    String email,
-    String password,
-  ) async {
+
+  //get current user
+  User? get currentUser => _auth.currentUser;
+
+  //Sign in with google
+  Future<User?> signInWithGoogle() async {
     try {
-      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      await GoogleSignIn.instance.initialize();
+      // Trigger the authentication flow
+      final GoogleSignInAccount googleUser = await GoogleSignIn.instance.authenticate();
 
-      //save user info on a separate doc
-      _firestore.collection('users').doc(userCredential.user!.uid).set({
-        'email': email,
-        'uid': userCredential.user!.uid,
-      });
+      final GoogleSignInAuthentication googleAuth = googleUser.authentication;
+      final credential = GoogleAuthProvider.credential(idToken: googleAuth.idToken);
 
-      return userCredential;
+      final userCredential = await _auth.signInWithCredential(credential);
+      return userCredential.user;
     } on FirebaseAuthException catch (e) {
-      throw Exception(e.code);
-    }
-  }
-
-  //sign up
-  Future<UserCredential> createUserWithEmailAndPassword(
-    String email,
-    String password,
-  ) async {
-    try {
-      UserCredential userCredential = await _auth
-          .createUserWithEmailAndPassword(email: email, password: password);
-
-      //save user info on a separate doc
-      _firestore.collection('users').doc(userCredential.user!.uid).set({
-        'email': email,
-        'uid': userCredential.user!.uid,
-      });
-
-      return userCredential;
-    } on FirebaseAuthException catch (e) {
-      throw Exception(e.code);
+      throw Exception('FirebaseAuthException: ${e.message}');
     }
   }
 
   //sign out
-
   Future<void> signOut() async {
+    await GoogleSignIn.instance.signOut();
     await _auth.signOut();
   }
-
-  //errors
 }
