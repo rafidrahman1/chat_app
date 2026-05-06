@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 /// Small avatar widget used by message rows.
@@ -12,8 +13,8 @@ class AvatarWidget extends StatelessWidget {
     return CircleAvatar(
       radius: radius,
       backgroundColor: Colors.grey.shade300,
-      backgroundImage: avatarUrl != null && avatarUrl!.isNotEmpty ? NetworkImage(avatarUrl!) : null,
-      child: avatarUrl == null || avatarUrl!.isEmpty ? const Icon(Icons.person, size: 16, color: Colors.white) : null,
+      backgroundImage: avatarUrl != null && avatarUrl!.isNotEmpty ? CachedNetworkImageProvider(avatarUrl!) : null,
+      child: avatarUrl == null || avatarUrl!.isEmpty ? const Icon(Icons.person, size: 20, color: Colors.white) : null,
     );
   }
 }

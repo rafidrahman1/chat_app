@@ -26,10 +26,11 @@ class ChatService {
     }
 
     final String currentUserID = user.uid;
+    final String displayName = user.displayName ?? 'Anonymous';
     final Timestamp timestamp = Timestamp.now();
 
     //create newMessage
-    Message newMessage = Message(msgId: timestamp.millisecondsSinceEpoch, content: message, timestamp: timestamp.toDate(), senderId: currentUserID);
+    Message newMessage = Message(msgId: timestamp.millisecondsSinceEpoch, content: message, timestamp: timestamp.toDate(), senderId: currentUserID, displayName: displayName);
 
     // write message to Firestore under the single chat room
     await _messagesCollection.add(newMessage.toMap());

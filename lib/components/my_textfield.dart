@@ -4,12 +4,7 @@ class MyTextfield extends StatelessWidget {
   final String? hintText;
   final bool? obscureText;
   final TextEditingController? controller;
-  const MyTextfield({
-    super.key,
-    required this.hintText,
-    this.obscureText,
-    required this.controller,
-  });
+  const MyTextfield({super.key, required this.hintText, this.obscureText, required this.controller});
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +15,7 @@ class MyTextfield extends StatelessWidget {
       child: TextField(
         obscureText: obscureText ?? false,
         controller: controller,
-        style: TextStyle(color: colorScheme.onSurface),
+        style: TextStyle(color: colorScheme.tertiary),
 
         decoration: InputDecoration(
           hintText: hintText,

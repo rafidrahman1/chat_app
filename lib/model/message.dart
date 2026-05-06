@@ -3,12 +3,13 @@ class Message {
   final String content;
   final DateTime timestamp;
   final String senderId;
+  final String displayName;
 
-  Message({required this.msgId, required this.content, required this.timestamp, required this.senderId});
+  Message({required this.msgId, required this.content, required this.timestamp, required this.senderId, this.displayName = ''});
 
   //convert to a map
   Map<String, dynamic> toMap() {
-    return {'content': content, 'timestamp': timestamp.toIso8601String(), 'senderId': senderId, 'msgId': msgId};
+    return {'content': content, 'timestamp': timestamp.toIso8601String(), 'senderId': senderId, 'msgId': msgId, 'displayName': displayName};
   }
 
   //create Message from a map (used when reading from Firestore)
@@ -37,6 +38,7 @@ class Message {
       content: map['content'] ?? '',
       timestamp: parsedTimestamp,
       senderId: map['senderId'] ?? '',
+      displayName: map['displayName'] ?? '',
     );
   }
 }
