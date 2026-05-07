@@ -10,5 +10,7 @@ class FirestorePaths {
   static const String messagesCollection = 'messages';
 
   static const String usersCollection = 'users';
-}
 
+  static const String valorantStacksCollection = 'valorantStacks';
+  static const String dailyValorantStackDoc = 'daily_5_stack';
+}

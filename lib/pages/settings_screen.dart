@@ -59,6 +59,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final usersState = ref.watch(userProfilesProvider);
     final user = authState.asData?.value;
     final profiles = usersState.asData?.value;
+    final colorScheme = Theme.of(context).colorScheme;
 
     if (authState.isLoading || usersState.isLoading) {
       return Scaffold(
@@ -96,23 +97,35 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ),
                   const SizedBox(height: 12),
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+
                     children: [
-                      ElevatedButton(
-                        onPressed: _saving ? null : () => _saveName(user),
-                        child: _saving
-                            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                            : const Text('Save', style: TextStyle(color: Colors.white)),
-                      ),
-                      const SizedBox(width: 8),
-                      TextButton(
-                        onPressed: _saving
-                            ? null
-                            : () {
-                                _nameController.clear();
-                              },
-                        child: const Text('Clear'),
+                      Padding(
+                        padding: const EdgeInsets.only(right: 3),
+                        child: ElevatedButton(
+                          onPressed: _saving ? null : () => _saveName(user),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: colorScheme.primary,
+                            side: const BorderSide(color: Colors.white, width: 2),
+                          ),
+                          child: _saving
+                              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                              : const Text('Save', style: TextStyle(color: Colors.white)),
+                        ),
                       ),
                     ],
+                  ),
+
+                  SizedBox(height: 24),
+                  Text('Sync User Items', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  SizedBox(height: 8),
+                  ElevatedButton(
+                    onPressed: () async {},
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: colorScheme.primary,
+                      side: const BorderSide(color: Colors.white, width: 2),
+                    ),
+                    child: const Text('Sync Now', style: TextStyle(color: Colors.white)),
                   ),
                 ],
               ),
