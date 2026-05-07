@@ -11,7 +11,7 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(authStateChangesProvider).valueOrNull;
+    final user = ref.watch(authStateChangesProvider).asData?.value;
 
     final avatar = user?.photoURL != null
         ? CircleAvatar(
