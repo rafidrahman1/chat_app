@@ -12,6 +12,7 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authStateChangesProvider).asData?.value;
+    final profiles = ref.watch(userProfilesProvider).asData?.value ?? const {};
     final hasUnreadMessages = ref.watch(hasUnreadMessagesProvider);
     final lastReadMsgId = ref.watch(lastReadMsgIdProvider);
 
@@ -26,7 +27,9 @@ class HomeScreen extends ConsumerWidget {
         ? CircleAvatar(radius: 16, backgroundImage: CachedNetworkImageProvider(user!.photoURL!))
         : const CircleAvatar(radius: 16, child: Icon(Icons.person));
 
-    final displayName = user?.displayName ?? 'Home';
+    final profileName = user == null ? '' : profiles[user.uid]?.displayName.trim() ?? '';
+    final authName = (user?.displayName ?? '').trim();
+    final displayName = profileName.isNotEmpty ? profileName : (authName.isNotEmpty ? authName : 'Home');
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(

@@ -1,7 +1,6 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../core/firestore_paths.dart';
 
@@ -20,13 +19,10 @@ class AuthService {
     try {
       await GoogleSignIn.instance.initialize();
       // Trigger the authentication flow
-      final GoogleSignInAccount googleUser = await GoogleSignIn.instance
-          .authenticate();
+      final GoogleSignInAccount googleUser = await GoogleSignIn.instance.authenticate();
 
       final GoogleSignInAuthentication googleAuth = googleUser.authentication;
-      final credential = GoogleAuthProvider.credential(
-        idToken: googleAuth.idToken,
-      );
+      final credential = GoogleAuthProvider.credential(idToken: googleAuth.idToken);
 
       final userCredential = await _auth.signInWithCredential(credential);
       final user = userCredential.user;
@@ -40,17 +36,13 @@ class AuthService {
   }
 
   Future<void> _cacheUserProfile(User user) async {
-    final displayName = (user.displayName ?? '').trim();
     final photoUrl = (user.photoURL ?? '').trim();
+    final docRef = _firestore.collection(FirestorePaths.usersCollection).doc(user.uid);
+    final snapshot = await docRef.get();
+    final existingDisplayName = '${snapshot.data()?['displayName'] ?? ''}'.trim();
+    final displayName = existingDisplayName.isNotEmpty ? existingDisplayName : (user.displayName ?? '').trim();
 
-    await _firestore.collection(FirestorePaths.usersCollection).doc(user.uid).set(
-      {
-        'displayName': displayName,
-        'photoUrl': photoUrl,
-        'updatedAt': FieldValue.serverTimestamp(),
-      },
-      SetOptions(merge: true),
-    );
+    await docRef.set({'displayName': displayName, 'photoUrl': photoUrl, 'updatedAt': FieldValue.serverTimestamp()}, SetOptions(merge: true));
   }
 
   Future<void> cacheCurrentUserProfile() async {
