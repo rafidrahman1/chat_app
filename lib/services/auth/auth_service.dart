@@ -8,15 +8,20 @@ class AuthService {
   //get current user
   User? get currentUser => _auth.currentUser;
 
+  Stream<User?> get authStateChanges => _auth.authStateChanges();
+
   //Sign in with google
   Future<User?> signInWithGoogle() async {
     try {
       await GoogleSignIn.instance.initialize();
       // Trigger the authentication flow
-      final GoogleSignInAccount googleUser = await GoogleSignIn.instance.authenticate();
+      final GoogleSignInAccount googleUser = await GoogleSignIn.instance
+          .authenticate();
 
       final GoogleSignInAuthentication googleAuth = googleUser.authentication;
-      final credential = GoogleAuthProvider.credential(idToken: googleAuth.idToken);
+      final credential = GoogleAuthProvider.credential(
+        idToken: googleAuth.idToken,
+      );
 
       final userCredential = await _auth.signInWithCredential(credential);
       return userCredential.user;

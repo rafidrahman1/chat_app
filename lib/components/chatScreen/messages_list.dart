@@ -1,25 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../model/message.dart';
-import '../../services/auth/auth_service.dart';
-import '../../services/chat/chat_service.dart';
+import '../../providers/app_providers.dart';
 import 'message_bubble.dart';
 
-class MessagesList extends StatefulWidget {
-  final ChatService chatService;
-  final AuthService authService;
-
-  const MessagesList({
-    super.key,
-    required this.chatService,
-    required this.authService,
-  });
+class MessagesList extends ConsumerStatefulWidget {
+  const MessagesList({super.key});
 
   @override
-  State<MessagesList> createState() => _MessagesListState();
+  ConsumerState<MessagesList> createState() => _MessagesListState();
 }
 
-class _MessagesListState extends State<MessagesList> {
+class _MessagesListState extends ConsumerState<MessagesList> {
   final ScrollController _scrollController = ScrollController();
   static const double _autoScrollThreshold = 120;
   int _lastMessageCount = 0;
@@ -67,21 +60,15 @@ class _MessagesListState extends State<MessagesList> {
 
   @override
   Widget build(BuildContext context) {
-    final currentUserId = widget.authService.currentUser?.uid;
+    final currentUser = ref.watch(authStateChangesProvider).valueOrNull;
+    final currentUserId = currentUser?.uid;
+    final messagesState = ref.watch(chatMessagesProvider);
 
-    return StreamBuilder<List<Message>>(
-      stream: widget.chatService.getChatMessagesStream(),
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return const Center(
-            child: Text('Something went wrong loading messages.'),
-          );
-        }
-        if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        final messages = snapshot.data!;
+    return messagesState.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (_, __) =>
+          const Center(child: Text('Something went wrong loading messages.')),
+      data: (messages) {
         if (messages.isEmpty) {
           return const Center(
             child: Text('No messages yet. Start the conversation!'),
@@ -122,7 +109,7 @@ class _MessagesListState extends State<MessagesList> {
                   isMe: isMe,
                   startsGroup: startsGroup,
                   endsGroup: endsGroup,
-                  myPhotoUrl: widget.authService.currentUser?.photoURL,
+                  myPhotoUrl: currentUser?.photoURL,
                 );
               },
             ),

@@ -1,20 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../components/chatScreen/message_input.dart';
 import '../components/chatScreen/messages_list.dart';
-import '../services/auth/auth_service.dart';
-import '../services/chat/chat_service.dart';
+import '../providers/app_providers.dart';
 
-class ChatScreen extends StatefulWidget {
+class ChatScreen extends ConsumerStatefulWidget {
   const ChatScreen({super.key});
 
   @override
-  State<ChatScreen> createState() => _ChatScreenState();
+  ConsumerState<ChatScreen> createState() => _ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> {
-  final ChatService _chatService = ChatService();
-  final AuthService _authService = AuthService();
+class _ChatScreenState extends ConsumerState<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
 
   @override
@@ -28,7 +26,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (text.isEmpty) return;
 
     try {
-      await _chatService.sendMessage('', text);
+      await ref.read(chatServiceProvider).sendMessage('', text);
       _messageController.clear();
     } catch (e) {
       if (!mounted) return;
@@ -56,12 +54,7 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
       body: Column(
         children: [
-          Expanded(
-            child: MessagesList(
-              chatService: _chatService,
-              authService: _authService,
-            ),
-          ),
+          Expanded(child: MessagesList()),
           MessageInput(controller: _messageController, onSend: _sendMessage),
         ],
       ),
