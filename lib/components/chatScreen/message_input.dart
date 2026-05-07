@@ -8,38 +8,50 @@ class MessageInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(10, 6, 10, 10),
         child: Row(
           children: [
-            IconButton(
-              onPressed: () {},
-              icon: const Icon(Icons.add_circle_outline, color: Color(0xFF0084FF)),
-            ),
             Expanded(
               child: TextField(
                 controller: controller,
+                cursorColor: colorScheme.onSurface,
                 textInputAction: TextInputAction.send,
                 onSubmitted: (_) => onSend(),
                 decoration: InputDecoration(
                   hintText: 'Aa',
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
                   filled: true,
-                  fillColor: const Color(0xFFF0F2F5),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
-                  suffixIcon: const Icon(Icons.emoji_emotions_outlined, color: Colors.grey),
+                  fillColor: colorScheme.surface,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide(color: colorScheme.onSurface),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide(color: colorScheme.onSurface),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide(color: colorScheme.secondary, width: 2),
+                  ),
                 ),
               ),
             ),
             const SizedBox(width: 8),
             CircleAvatar(
-              radius: 18,
-              backgroundColor: const Color(0xFF0084FF),
+              radius: 25,
+              backgroundColor: colorScheme.secondary,
               child: IconButton(
                 padding: EdgeInsets.zero,
                 onPressed: onSend,
-                icon: const Icon(Icons.send_rounded, color: Colors.white, size: 19),
+                icon: Icon(
+                  Icons.send_rounded,
+                  color: colorScheme.onSecondary,
+                  size: 19,
+                ),
                 tooltip: 'Send',
               ),
             ),

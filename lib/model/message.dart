@@ -4,11 +4,21 @@ class Message {
   final DateTime timestamp;
   final String senderId;
 
-  Message({required this.msgId, required this.content, required this.timestamp, required this.senderId});
+  Message({
+    required this.msgId,
+    required this.content,
+    required this.timestamp,
+    required this.senderId,
+  });
 
   //convert to a map
   Map<String, dynamic> toMap() {
-    return {'content': content, 'timestamp': timestamp.toIso8601String(), 'senderId': senderId, 'msgId': msgId};
+    return {
+      'content': content,
+      'timestamp': timestamp.toIso8601String(),
+      'senderId': senderId,
+      'msgId': msgId,
+    };
   }
 
   //create Message from a map (used when reading from Firestore)
@@ -22,7 +32,9 @@ class Message {
       parsedTimestamp = ts;
     } else if (ts is Map && ts['_seconds'] != null) {
       // legacy Firestore timestamp map (if it ever appears)
-      parsedTimestamp = DateTime.fromMillisecondsSinceEpoch((ts['_seconds'] as int) * 1000);
+      parsedTimestamp = DateTime.fromMillisecondsSinceEpoch(
+        (ts['_seconds'] as int) * 1000,
+      );
     } else {
       // Firestore Timestamp
       try {
@@ -33,7 +45,9 @@ class Message {
     }
 
     return Message(
-      msgId: (map['msgId'] is int) ? map['msgId'] : int.tryParse('${map['msgId']}') ?? 0,
+      msgId: (map['msgId'] is int)
+          ? map['msgId']
+          : int.tryParse('${map['msgId']}') ?? 0,
       content: map['content'] ?? '',
       timestamp: parsedTimestamp,
       senderId: map['senderId'] ?? '',

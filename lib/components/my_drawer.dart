@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../services/auth/auth_service.dart';
+import '../providers/app_providers.dart';
+import '../routes.dart';
 
-class MyDrawer extends StatelessWidget {
+class MyDrawer extends ConsumerWidget {
   const MyDrawer({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Drawer(
@@ -18,7 +20,11 @@ class MyDrawer extends StatelessWidget {
             child: Center(
               child: Text(
                 'Deadshot',
-                style: TextStyle(color: colorScheme.onSecondary, fontSize: 24, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: colorScheme.onSecondary,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
@@ -31,10 +37,13 @@ class MyDrawer extends StatelessWidget {
           ),
           ListTile(
             leading: Icon(Icons.settings, color: colorScheme.onSurface),
-            title: Text('Settings', style: TextStyle(color: colorScheme.onSurface)),
+            title: Text(
+              'Settings',
+              style: TextStyle(color: colorScheme.onSurface),
+            ),
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushNamed(context, '/settings');
+              Navigator.pushNamed(context, AppRoutes.settings);
             },
           ),
           Expanded(child: SizedBox()),
@@ -42,9 +51,12 @@ class MyDrawer extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 15),
             child: ListTile(
               leading: Icon(Icons.logout, color: colorScheme.onSurface),
-              title: Text('Logout', style: TextStyle(color: colorScheme.onSurface)),
+              title: Text(
+                'Logout',
+                style: TextStyle(color: colorScheme.onSurface),
+              ),
               onTap: () async {
-                await AuthService().signOut();
+                await ref.read(authServiceProvider).signOut();
                 if (context.mounted) Navigator.pop(context);
               },
             ),

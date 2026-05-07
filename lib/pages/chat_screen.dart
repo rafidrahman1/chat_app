@@ -1,63 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../components/chatScreen/message_input.dart';
+import '../components/chatScreen/messages_list.dart';
 import '../model/message.dart';
-import '../services/auth/auth_service.dart';
-import '../services/chat/chat_service.dart';
+import '../providers/app_providers.dart';
 
-class ChatScreen extends StatefulWidget {
+class ChatScreen extends ConsumerStatefulWidget {
   const ChatScreen({super.key});
 
   @override
-  State<ChatScreen> createState() => _ChatScreenState();
+  ConsumerState<ChatScreen> createState() => _ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> {
-  final ChatService _chatService = ChatService();
-  final AuthService _authService = AuthService();
+class _ChatScreenState extends ConsumerState<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
-  final ScrollController _scrollController = ScrollController();
-  static const double _autoScrollThreshold = 120;
-  int _lastMessageCount = 0;
-  bool _isNearBottom = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _scrollController.addListener(_handleScroll);
-  }
-
-  void _handleScroll() {
-    if (!_scrollController.hasClients) return;
-    final max = _scrollController.position.maxScrollExtent;
-    final current = _scrollController.position.pixels;
-    final nearBottom = (max - current) <= _autoScrollThreshold;
-
-    if (nearBottom != _isNearBottom && mounted) {
-      setState(() {
-        _isNearBottom = nearBottom;
-      });
-    }
-  }
-
-  void _scrollToBottom({bool animated = true}) {
-    if (!_scrollController.hasClients) return;
-    final target = _scrollController.position.maxScrollExtent;
-
-    if (animated) {
-      _scrollController.animateTo(
-        target,
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeOut,
-      );
-    } else {
-      _scrollController.jumpTo(target);
-    }
-  }
 
   @override
   void dispose() {
     _messageController.dispose();
-    _scrollController.dispose();
     super.dispose();
   }
 
@@ -65,9 +26,10 @@ class _ChatScreenState extends State<ChatScreen> {
     final text = _messageController.text.trim();
     if (text.isEmpty) return;
 
+    _messageController.clear();
+
     try {
-      await _chatService.sendMessage('', text);
-      _messageController.clear();
+      await ref.read(chatServiceProvider).sendMessage('', text);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to send: $e')));
@@ -76,109 +38,31 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final currentUserId = _authService.currentUser?.uid;
+    // ensure UI rebuilds when messages update (the list listens too, but this keeps screen state in sync)
+    ref.watch(chatMessagesProvider);
+
+    ref.listen<AsyncValue<List<Message>>>(chatMessagesProvider, (prev, next) {
+      final messages = next.asData?.value;
+      if (messages == null || messages.isEmpty) return;
+      ref.read(lastReadMsgIdProvider.notifier).markRead(messages.last.msgId);
+    });
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Chatroom')),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(
+        elevation: 1,
+        shadowColor: Colors.black12,
+        titleSpacing: 0,
+        actions: [IconButton(onPressed: () {}, icon: const Icon(Icons.info_outline))],
+      ),
       body: Column(
         children: [
-          Expanded(
-            child: StreamBuilder<List<Message>>(
-              stream: _chatService.getChatMessagesStream(),
-              builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  return const Center(child: Text('Something went wrong loading messages.'));
-                }
-                if (!snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                final messages = snapshot.data!;
-                if (messages.isEmpty) {
-                  return const Center(child: Text('No messages yet. Start the conversation!'));
-                }
-
-                final hasNewMessage = messages.length > _lastMessageCount;
-                _lastMessageCount = messages.length;
-
-                if (hasNewMessage) {
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (!mounted) return;
-                    if (_isNearBottom) {
-                      _scrollToBottom();
-                    }
-                  });
-                }
-
-                return Stack(
-                  children: [
-                    ListView.builder(
-                      controller: _scrollController,
-                      padding: const EdgeInsets.all(12),
-                      itemCount: messages.length,
-                      itemBuilder: (context, index) {
-                        final message = messages[index];
-                        final isMe = message.senderId == currentUserId;
-
-                        return Align(
-                          alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-                          child: Container(
-                            margin: const EdgeInsets.symmetric(vertical: 4),
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                            decoration: BoxDecoration(
-                              color: isMe ? Colors.blueAccent : Colors.grey.shade300,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              message.content,
-                              style: TextStyle(color: isMe ? Colors.white : Colors.black87),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    if (!_isNearBottom)
-                      Positioned(
-                        right: 12,
-                        bottom: 12,
-                        child: FloatingActionButton.small(
-                          onPressed: () => _scrollToBottom(),
-                          child: const Icon(Icons.keyboard_arrow_down),
-                        ),
-                      ),
-                  ],
-                );
-              },
-            ),
-          ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _messageController,
-                      textInputAction: TextInputAction.send,
-                      onSubmitted: (_) => _sendMessage(),
-                      decoration: const InputDecoration(
-                        hintText: 'Type a message...',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    onPressed: _sendMessage,
-                    icon: const Icon(Icons.send),
-                    tooltip: 'Send',
-                  ),
-                ],
-              ),
-            ),
-          ),
+          Expanded(child: MessagesList()),
+          MessageInput(controller: _messageController, onSend: _sendMessage),
         ],
       ),
     );
   }
+
+  // Message row and avatar builders were moved to separate widgets in lib/pages/widgets/
 }
