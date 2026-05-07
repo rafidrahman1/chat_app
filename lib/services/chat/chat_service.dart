@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../../core/firestore_paths.dart';
 import '../../model/message.dart';
 
 class ChatService {
@@ -8,15 +9,12 @@ class ChatService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // single global chat room id used by all users
-  static const String _globalChatRoomId = 'global_chat_room';
-
   // helper to get messages collection reference for the global room
   CollectionReference<Map<String, dynamic>> get _messagesCollection {
     return _firestore
-        .collection('chatRooms')
-        .doc(_globalChatRoomId)
-        .collection('messages');
+        .collection(FirestorePaths.chatRoomsCollection)
+        .doc(FirestorePaths.globalChatRoomId)
+        .collection(FirestorePaths.messagesCollection);
   }
 
   String _normalizePhotoUrl(String? url) {

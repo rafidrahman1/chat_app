@@ -9,6 +9,8 @@ class GoogleSignInButton extends ConsumerWidget {
   @override
   //handle google sign in
   Widget build(BuildContext context, WidgetRef ref) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     Future<void> handleGoogleSignIn() async {
       try {
         await ref.read(authServiceProvider).signInWithGoogle();
@@ -22,15 +24,18 @@ class GoogleSignInButton extends ConsumerWidget {
 
     return ElevatedButton(
       onPressed: handleGoogleSignIn,
-      style: ElevatedButton.styleFrom(backgroundColor: Colors.red[50]),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: colorScheme.onSurface.withValues(alpha: 0.06),
+        foregroundColor: colorScheme.onSurface,
+      ),
       child: Padding(
         padding: const EdgeInsets.all(8.0),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          spacing: 15,
           children: [
             Image.asset('assets/images/google_logo.png', height: 40),
-            Text('Sign in with Google'),
+            const SizedBox(width: 15),
+            const Text('Sign in with Google'),
           ],
         ),
       ),

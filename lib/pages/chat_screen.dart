@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../components/chatScreen/message_input.dart';
 import '../components/chatScreen/messages_list.dart';
+import '../model/message.dart';
 import '../providers/app_providers.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
@@ -15,10 +16,15 @@ class ChatScreen extends ConsumerStatefulWidget {
 class _ChatScreenState extends ConsumerState<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
 
-  void _markLatestAsRead() {
-    final messages = ref.read(chatMessagesProvider).asData?.value;
-    if (messages == null || messages.isEmpty) return;
-    ref.read(lastReadMsgIdProvider.notifier).state = messages.last.msgId;
+  @override
+  void initState() {
+    super.initState();
+
+    ref.listen<AsyncValue<List<Message>>>(chatMessagesProvider, (prev, next) {
+      final messages = next.asData?.value;
+      if (messages == null || messages.isEmpty) return;
+      ref.read(lastReadMsgIdProvider.notifier).markRead(messages.last.msgId);
+    });
   }
 
   @override
@@ -44,20 +50,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // ensure UI rebuilds when messages update (the list listens too, but this keeps screen state in sync)
     ref.watch(chatMessagesProvider);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      _markLatestAsRead();
-    });
-    // build UI
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         elevation: 1,
         shadowColor: Colors.black12,
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
         titleSpacing: 0,
         actions: [
           IconButton(onPressed: () {}, icon: const Icon(Icons.info_outline)),

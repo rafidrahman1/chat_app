@@ -13,14 +13,14 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authStateChangesProvider).asData?.value;
     final hasUnreadMessages = ref.watch(hasUnreadMessagesProvider);
-    final messages = ref.watch(chatMessagesProvider).asData?.value;
     final lastReadMsgId = ref.watch(lastReadMsgIdProvider);
 
-    if (lastReadMsgId == null && messages != null && messages.isNotEmpty) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        ref.read(lastReadMsgIdProvider.notifier).state = messages.last.msgId;
-      });
-    }
+    ref.listen(chatMessagesProvider, (_, next) {
+      final messages = next.asData?.value;
+      if (messages == null || messages.isEmpty) return;
+      if (ref.read(lastReadMsgIdProvider) != null) return;
+      ref.read(lastReadMsgIdProvider.notifier).markRead(messages.last.msgId);
+    });
 
     final avatar = user?.photoURL != null
         ? CircleAvatar(
@@ -30,9 +30,10 @@ class HomeScreen extends ConsumerWidget {
         : const CircleAvatar(radius: 16, child: Icon(Icons.person));
 
     final displayName = user?.displayName ?? 'Home';
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Row(
           mainAxisAlignment: MainAxisAlignment.end,
@@ -48,36 +49,39 @@ class HomeScreen extends ConsumerWidget {
         ),
       ),
       drawer: const MyDrawer(),
-      body: Scaffold(
-        body: Center(
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              ElevatedButton.icon(
-                onPressed: () {
-                  final latestMsgId = messages?.isNotEmpty == true ? messages!.last.msgId : null;
-                  if (latestMsgId != null) {
-                    ref.read(lastReadMsgIdProvider.notifier).state = latestMsgId;
+      body: Center(
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            ElevatedButton.icon(
+              onPressed: () {
+                if (lastReadMsgId == null) {
+                  final messages = ref.read(chatMessagesProvider).asData?.value;
+                  if (messages != null && messages.isNotEmpty) {
+                    ref
+                        .read(lastReadMsgIdProvider.notifier)
+                        .markRead(messages.last.msgId);
                   }
-                  Navigator.pushNamed(context, AppRoutes.chat);
-                },
-                icon: const Icon(Icons.forum, color: Colors.white),
-                label: const Text(
-                  'Open Chatroom',
-                  style: TextStyle(color: Colors.white),
+                }
+                Navigator.pushNamed(context, AppRoutes.chat);
+              },
+              icon: Icon(Icons.forum, color: colorScheme.onSecondary),
+              label: Text(
+                'Open Chatroom',
+                style: TextStyle(color: colorScheme.onSecondary),
+              ),
+              style: ElevatedButton.styleFrom(backgroundColor: colorScheme.secondary),
+            ),
+            if (hasUnreadMessages)
+              const Positioned(
+                top: -2,
+                right: -2,
+                child: CircleAvatar(
+                  radius: 6,
+                  backgroundColor: Colors.red,
                 ),
               ),
-              if (hasUnreadMessages)
-                const Positioned(
-                  top: -2,
-                  right: -2,
-                  child: CircleAvatar(
-                    radius: 6,
-                    backgroundColor: Colors.red,
-                  ),
-                ),
-            ],
-          ),
+          ],
         ),
       ),
     );

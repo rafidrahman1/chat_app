@@ -14,8 +14,9 @@ class MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const messageColor = Colors.black;
-    const textColor = Colors.white;
+    final colorScheme = Theme.of(context).colorScheme;
+    final messageColor = colorScheme.surface;
+    final textColor = colorScheme.onSurface;
     final avatarUrl = isMe ? myPhotoUrl : message.senderPhotoUrl;
     final fallbackLabel = isMe ? null : (message.displayName.isNotEmpty ? message.displayName : message.senderEmail);
     final radius = BorderRadius.only(
@@ -32,7 +33,10 @@ class MessageBubble extends StatelessWidget {
       decoration: BoxDecoration(
         color: messageColor,
         borderRadius: radius,
-        border: Border.all(color: const Color(0xFFD3D3D3), width: 1),
+        border: Border.all(
+          color: colorScheme.onSurface.withValues(alpha: 0.25),
+          width: 1,
+        ),
       ),
       child: Text(message.content, style: TextStyle(fontSize: 15, color: textColor)),
     );

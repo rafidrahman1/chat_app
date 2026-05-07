@@ -17,7 +17,17 @@ final chatMessagesProvider = StreamProvider<List<Message>>((ref) {
   return ref.watch(chatServiceProvider).getChatMessagesStream();
 });
 
-final lastReadMsgIdProvider = StateProvider<int?>((ref) => null);
+class LastReadMsgIdNotifier extends Notifier<int?> {
+  @override
+  int? build() => null;
+
+  void markRead(int msgId) => state = msgId;
+
+  void clear() => state = null;
+}
+
+final lastReadMsgIdProvider =
+    NotifierProvider<LastReadMsgIdNotifier, int?>(LastReadMsgIdNotifier.new);
 
 final hasUnreadMessagesProvider = Provider<bool>((ref) {
   final currentUser = ref.watch(authStateChangesProvider).asData?.value;

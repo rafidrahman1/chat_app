@@ -5,13 +5,15 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
+import '../../core/firestore_paths.dart';
 import '../../routes.dart';
 
 class NotificationService {
   NotificationService._();
   static final NotificationService instance = NotificationService._();
 
-  final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin _localNotifications =
+      FlutterLocalNotificationsPlugin();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
@@ -49,8 +51,14 @@ class NotificationService {
         navigatorKey.currentState?.pushNamed(AppRoutes.chat);
       },
     );
-    await _localNotifications.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()?.createNotificationChannel(_chatChannel);
-    await _localNotifications.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()?.requestNotificationsPermission();
+    await _localNotifications
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(_chatChannel);
+    await _localNotifications
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.requestNotificationsPermission();
     _localNotificationsInitialized = true;
   }
 
@@ -59,9 +67,9 @@ class NotificationService {
     _lastObservedMsgId = null;
 
     _chatSubscription = _firestore
-        .collection('chatRooms')
-        .doc('global_chat_room')
-        .collection('messages')
+        .collection(FirestorePaths.chatRoomsCollection)
+        .doc(FirestorePaths.globalChatRoomId)
+        .collection(FirestorePaths.messagesCollection)
         .orderBy('msgId', descending: true)
         .limit(1)
         .snapshots()

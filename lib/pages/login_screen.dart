@@ -17,10 +17,13 @@ class LoginScreen extends StatelessWidget {
             //logo
             Icon(Icons.message, size: 60, color: colorScheme.tertiary),
 
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
 
             //google sign in button
-            Padding(padding: const EdgeInsets.fromLTRB(20, 10, 20, 10), child: GoogleSignInButton()),
+            const Padding(
+              padding: EdgeInsets.fromLTRB(20, 10, 20, 10),
+              child: GoogleSignInButton(),
+            ),
           ],
         ),
       ),

@@ -61,7 +61,8 @@ class _MessagesListState extends ConsumerState<MessagesList> {
 
     return messagesState.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (_, __) => const Center(child: Text('Something went wrong loading messages.')),
+      error: (error, stackTrace) =>
+          const Center(child: Text('Something went wrong loading messages.')),
       data: (messages) {
         if (messages.isEmpty) {
           return const Center(child: Text('No messages yet. Start the conversation!'));

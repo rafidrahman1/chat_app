@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/app_providers.dart';
+import '../routes.dart';
 
 class MyDrawer extends ConsumerWidget {
   const MyDrawer({super.key});
@@ -42,7 +43,7 @@ class MyDrawer extends ConsumerWidget {
             ),
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushNamed(context, '/settings');
+              Navigator.pushNamed(context, AppRoutes.settings);
             },
           ),
           Expanded(child: SizedBox()),

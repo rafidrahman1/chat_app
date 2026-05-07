@@ -16,7 +16,7 @@ class AuthGate extends ConsumerWidget {
       data: (user) => user != null ? const HomeScreen() : const LoginScreen(),
       loading: () =>
           const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (_, __) => const LoginScreen(),
+      error: (error, stackTrace) => const LoginScreen(),
     );
   }
 }
