@@ -2,12 +2,16 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../model/message.dart';
+import '../model/user_profile.dart';
 import '../services/auth/auth_service.dart';
 import '../services/chat/chat_service.dart';
+import '../services/users/user_service.dart';
 
 final authServiceProvider = Provider<AuthService>((ref) => AuthService());
 
 final chatServiceProvider = Provider<ChatService>((ref) => ChatService());
+
+final userServiceProvider = Provider<UserService>((ref) => UserService());
 
 final authStateChangesProvider = StreamProvider<User?>((ref) {
   return ref.watch(authServiceProvider).authStateChanges;
@@ -15,6 +19,10 @@ final authStateChangesProvider = StreamProvider<User?>((ref) {
 
 final chatMessagesProvider = StreamProvider<List<Message>>((ref) {
   return ref.watch(chatServiceProvider).getChatMessagesStream();
+});
+
+final userProfilesProvider = StreamProvider<Map<String, UserProfile>>((ref) {
+  return ref.watch(userServiceProvider).watchAllUsers();
 });
 
 class LastReadMsgIdNotifier extends Notifier<int?> {
@@ -40,15 +48,10 @@ final hasUnreadMessagesProvider = Provider<bool>((ref) {
   final lastReadMsgId = ref.watch(lastReadMsgIdProvider);
   final latestIncoming = messages.lastWhere(
     (message) => message.senderId != currentUserId,
-    orElse: () => Message(
-      msgId: 0,
-      content: '',
-      timestamp: DateTime.fromMillisecondsSinceEpoch(0),
-      senderId: currentUserId,
-    ),
+    orElse: () => messages.first,
   );
 
-  if (latestIncoming.msgId == 0) return false;
+  if (latestIncoming.senderId == currentUserId) return false;
   if (lastReadMsgId == null) return true;
   return latestIncoming.msgId > lastReadMsgId;
 });

@@ -3,18 +3,12 @@ class Message {
   final String content;
   final DateTime timestamp;
   final String senderId;
-  final String displayName;
-  final String senderPhotoUrl;
-  final String senderEmail;
 
   Message({
     required this.msgId,
     required this.content,
     required this.timestamp,
     required this.senderId,
-    this.displayName = '',
-    this.senderPhotoUrl = '',
-    this.senderEmail = '',
   });
 
   //convert to a map
@@ -24,9 +18,6 @@ class Message {
       'timestamp': timestamp.toIso8601String(),
       'senderId': senderId,
       'msgId': msgId,
-      'displayName': displayName,
-      'senderPhotoUrl': senderPhotoUrl,
-      'senderEmail': senderEmail,
     };
   }
 
@@ -53,10 +44,6 @@ class Message {
       }
     }
 
-    // Accept legacy photo field names so older docs still render avatars.
-    final dynamic rawPhotoUrl =
-        map['senderPhotoUrl'] ?? map['senderPhotoURL'] ?? map['photoURL'] ?? map['photoUrl'] ?? '';
-
     return Message(
       msgId: (map['msgId'] is int)
           ? map['msgId']
@@ -64,9 +51,6 @@ class Message {
       content: map['content'] ?? '',
       timestamp: parsedTimestamp,
       senderId: map['senderId'] ?? '',
-      displayName: map['displayName'] ?? '',
-      senderPhotoUrl: '$rawPhotoUrl',
-      senderEmail: map['senderEmail'] ?? '',
     );
   }
 }

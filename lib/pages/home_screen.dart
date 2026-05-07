@@ -23,10 +23,7 @@ class HomeScreen extends ConsumerWidget {
     });
 
     final avatar = user?.photoURL != null
-        ? CircleAvatar(
-            radius: 16,
-            backgroundImage: CachedNetworkImageProvider(user!.photoURL!),
-          )
+        ? CircleAvatar(radius: 16, backgroundImage: CachedNetworkImageProvider(user!.photoURL!))
         : const CircleAvatar(radius: 16, child: Icon(Icons.person));
 
     final displayName = user?.displayName ?? 'Home';
@@ -38,11 +35,7 @@ class HomeScreen extends ConsumerWidget {
         title: Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            Text(
-              displayName,
-              style: const TextStyle(fontSize: 18),
-              overflow: TextOverflow.ellipsis,
-            ),
+            Text(displayName, style: const TextStyle(fontSize: 18), overflow: TextOverflow.ellipsis),
             SizedBox(width: 10),
             avatar,
           ],
@@ -58,29 +51,19 @@ class HomeScreen extends ConsumerWidget {
                 if (lastReadMsgId == null) {
                   final messages = ref.read(chatMessagesProvider).asData?.value;
                   if (messages != null && messages.isNotEmpty) {
-                    ref
-                        .read(lastReadMsgIdProvider.notifier)
-                        .markRead(messages.last.msgId);
+                    ref.read(lastReadMsgIdProvider.notifier).markRead(messages.last.msgId);
                   }
                 }
                 Navigator.pushNamed(context, AppRoutes.chat);
               },
               icon: Icon(Icons.forum, color: colorScheme.onSecondary),
-              label: Text(
-                'Open Chatroom',
-                style: TextStyle(color: colorScheme.onSecondary),
+              label: Text('Open Chatroom', style: TextStyle(color: colorScheme.onSecondary)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: colorScheme.primary,
+                side: const BorderSide(color: Colors.white, width: 1),
               ),
-              style: ElevatedButton.styleFrom(backgroundColor: colorScheme.secondary),
             ),
-            if (hasUnreadMessages)
-              const Positioned(
-                top: -2,
-                right: -2,
-                child: CircleAvatar(
-                  radius: 6,
-                  backgroundColor: Colors.red,
-                ),
-              ),
+            if (hasUnreadMessages) const Positioned(top: -2, right: -2, child: CircleAvatar(radius: 6, backgroundColor: Colors.red)),
           ],
         ),
       ),

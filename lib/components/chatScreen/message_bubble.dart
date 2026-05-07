@@ -8,17 +8,24 @@ class MessageBubble extends StatelessWidget {
   final bool isMe;
   final bool startsGroup;
   final bool endsGroup;
-  final String? myPhotoUrl;
+  final String? avatarUrl;
+  final String? fallbackLabel;
 
-  const MessageBubble({super.key, required this.message, required this.isMe, required this.startsGroup, required this.endsGroup, required this.myPhotoUrl});
+  const MessageBubble({
+    super.key,
+    required this.message,
+    required this.isMe,
+    required this.startsGroup,
+    required this.endsGroup,
+    required this.avatarUrl,
+    required this.fallbackLabel,
+  });
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final messageColor = colorScheme.surface;
     final textColor = colorScheme.onSurface;
-    final avatarUrl = isMe ? myPhotoUrl : message.senderPhotoUrl;
-    final fallbackLabel = isMe ? null : (message.displayName.isNotEmpty ? message.displayName : message.senderEmail);
     final radius = BorderRadius.only(
       topLeft: const Radius.circular(18),
       topRight: const Radius.circular(18),
@@ -51,7 +58,15 @@ class MessageBubble extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: Column(
-              children: [if (endsGroup) AvatarWidget(avatarUrl: avatarUrl, fallbackLabel: fallbackLabel) else const SizedBox(width: 28)],
+              children: [
+                if (endsGroup)
+                  AvatarWidget(
+                    avatarUrl: avatarUrl,
+                    fallbackLabel: fallbackLabel,
+                  )
+                else
+                  const SizedBox(width: 28),
+              ],
             ),
           ),
         ],
@@ -64,7 +79,15 @@ class MessageBubble extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.only(bottom: 8),
           child: Column(
-            children: [if (endsGroup) AvatarWidget(avatarUrl: avatarUrl, fallbackLabel: fallbackLabel) else const SizedBox(width: 28)],
+            children: [
+              if (endsGroup)
+                AvatarWidget(
+                  avatarUrl: avatarUrl,
+                  fallbackLabel: fallbackLabel,
+                )
+              else
+                const SizedBox(width: 28),
+            ],
           ),
         ),
         const SizedBox(width: 6),

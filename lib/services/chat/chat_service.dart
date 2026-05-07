@@ -17,27 +17,6 @@ class ChatService {
         .collection(FirestorePaths.messagesCollection);
   }
 
-  String _normalizePhotoUrl(String? url) {
-    final trimmed = (url ?? '').trim();
-    if (trimmed.isEmpty) return '';
-    if (trimmed.startsWith('http://')) {
-      return trimmed.replaceFirst('http://', 'https://');
-    }
-    return trimmed;
-  }
-
-  String _resolveSenderPhotoUrl(User user) {
-    final direct = _normalizePhotoUrl(user.photoURL);
-    if (direct.isNotEmpty) return direct;
-
-    for (final profile in user.providerData) {
-      final providerUrl = _normalizePhotoUrl(profile.photoURL);
-      if (providerUrl.isNotEmpty) return providerUrl;
-    }
-
-    return '';
-  }
-
   //send message to the single global chat room. The receiverEmail parameter is ignored
   //to keep compatibility with existing callers.
   Future<void> sendMessage(String receiverEmail, String message) async {
@@ -51,20 +30,14 @@ class ChatService {
     }
 
     final String currentUserID = user.uid;
-    final String displayName = user.displayName ?? 'Anonymous';
-    final String senderPhotoUrl = _resolveSenderPhotoUrl(user);
-    final String senderEmail = user.email ?? '';
     final Timestamp timestamp = Timestamp.now();
 
     //create newMessage
-    Message newMessage = Message(
+    final newMessage = Message(
       msgId: timestamp.millisecondsSinceEpoch,
       content: message,
       timestamp: timestamp.toDate(),
       senderId: currentUserID,
-      displayName: displayName,
-      senderPhotoUrl: senderPhotoUrl,
-      senderEmail: senderEmail,
     );
 
     // write message to Firestore under the single chat room

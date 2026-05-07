@@ -58,6 +58,7 @@ class _MessagesListState extends ConsumerState<MessagesList> {
     final currentUser = ref.watch(authStateChangesProvider).asData?.value;
     final currentUserId = currentUser?.uid;
     final messagesState = ref.watch(chatMessagesProvider);
+    final profiles = ref.watch(userProfilesProvider).asData?.value ?? const {};
 
     return messagesState.when(
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -89,11 +90,25 @@ class _MessagesListState extends ConsumerState<MessagesList> {
               itemBuilder: (context, index) {
                 final message = messages[index];
                 final isMe = message.senderId == currentUserId;
+                final senderProfile = profiles[message.senderId];
+                final avatarUrl = isMe ? currentUser?.photoURL : senderProfile?.photoUrl;
+                final fallbackLabel = isMe
+                    ? null
+                    : (senderProfile?.displayName.isNotEmpty == true
+                        ? senderProfile!.displayName
+                        : null);
                 final previousSender = index > 0 ? messages[index - 1].senderId : null;
                 final nextSender = index < messages.length - 1 ? messages[index + 1].senderId : null;
                 final startsGroup = previousSender != message.senderId;
                 final endsGroup = nextSender != message.senderId;
-                return MessageBubble(message: message, isMe: isMe, startsGroup: startsGroup, endsGroup: endsGroup, myPhotoUrl: currentUser?.photoURL);
+                return MessageBubble(
+                  message: message,
+                  isMe: isMe,
+                  startsGroup: startsGroup,
+                  endsGroup: endsGroup,
+                  avatarUrl: avatarUrl,
+                  fallbackLabel: fallbackLabel,
+                );
               },
             ),
             if (!_isNearBottom)

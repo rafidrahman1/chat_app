@@ -8,5 +8,7 @@ class FirestorePaths {
   static const String chatRoomsCollection = 'chatRooms';
   static const String globalChatRoomId = 'global_chat_room';
   static const String messagesCollection = 'messages';
+
+  static const String usersCollection = 'users';
 }
 
