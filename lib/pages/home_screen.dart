@@ -12,6 +12,15 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authStateChangesProvider).asData?.value;
+    final hasUnreadMessages = ref.watch(hasUnreadMessagesProvider);
+    final messages = ref.watch(chatMessagesProvider).asData?.value;
+    final lastReadMsgId = ref.watch(lastReadMsgIdProvider);
+
+    if (lastReadMsgId == null && messages != null && messages.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(lastReadMsgIdProvider.notifier).state = messages.last.msgId;
+      });
+    }
 
     final avatar = user?.photoURL != null
         ? CircleAvatar(
@@ -41,13 +50,33 @@ class HomeScreen extends ConsumerWidget {
       drawer: const MyDrawer(),
       body: Scaffold(
         body: Center(
-          child: ElevatedButton.icon(
-            onPressed: () => Navigator.pushNamed(context, AppRoutes.chat),
-            icon: const Icon(Icons.forum, color: Colors.white),
-            label: const Text(
-              'Open Chatroom',
-              style: TextStyle(color: Colors.white),
-            ),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              ElevatedButton.icon(
+                onPressed: () {
+                  final latestMsgId = messages?.isNotEmpty == true ? messages!.last.msgId : null;
+                  if (latestMsgId != null) {
+                    ref.read(lastReadMsgIdProvider.notifier).state = latestMsgId;
+                  }
+                  Navigator.pushNamed(context, AppRoutes.chat);
+                },
+                icon: const Icon(Icons.forum, color: Colors.white),
+                label: const Text(
+                  'Open Chatroom',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+              if (hasUnreadMessages)
+                const Positioned(
+                  top: -2,
+                  right: -2,
+                  child: CircleAvatar(
+                    radius: 6,
+                    backgroundColor: Colors.red,
+                  ),
+                ),
+            ],
           ),
         ),
       ),

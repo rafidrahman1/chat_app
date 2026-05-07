@@ -1,8 +1,7 @@
-import 'dart:io';
+import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
@@ -15,7 +14,6 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseMessaging _messaging = FirebaseMessaging.instance;
 
   static const AndroidNotificationChannel _chatChannel = AndroidNotificationChannel(
     'chat_messages',
@@ -26,28 +24,18 @@ class NotificationService {
 
   bool _initialized = false;
   bool _localNotificationsInitialized = false;
+  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _chatSubscription;
+  int? _lastObservedMsgId;
+  bool _isAppResumed = true;
 
   Future<void> initialize(GlobalKey<NavigatorState> navigatorKey) async {
     if (_initialized) return;
     _initialized = true;
 
+    WidgetsBinding.instance.addObserver(_LifecycleObserver(instance));
     await _initializeLocalNotifications(navigatorKey);
-    await _initializeFcmHandlers(navigatorKey);
-
-    _auth.authStateChanges().listen((user) async {
-      if (user == null) return;
-      await _syncTokenForUser(user.uid);
-    });
-    _messaging.onTokenRefresh.listen((token) async {
-      final user = _auth.currentUser;
-      if (user == null || token.trim().isEmpty) return;
-      await _saveToken(user.uid, token);
-    });
-
-    final currentUser = _auth.currentUser;
-    if (currentUser != null) {
-      await _syncTokenForUser(currentUser.uid);
-    }
+    _auth.authStateChanges().listen((_) => _startChatListener());
+    _startChatListener();
   }
 
   Future<void> _initializeLocalNotifications(GlobalKey<NavigatorState> navigatorKey) async {
@@ -66,45 +54,41 @@ class NotificationService {
     _localNotificationsInitialized = true;
   }
 
-  Future<void> ensureBackgroundLocalNotificationsInitialized() async {
-    if (_localNotificationsInitialized) return;
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const settings = InitializationSettings(android: androidSettings);
-    await _localNotifications.initialize(settings: settings);
-    await _localNotifications.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()?.createNotificationChannel(_chatChannel);
-    _localNotificationsInitialized = true;
-  }
+  void _startChatListener() {
+    _chatSubscription?.cancel();
+    _lastObservedMsgId = null;
 
-  Future<void> _initializeFcmHandlers(GlobalKey<NavigatorState> navigatorKey) async {
-    await _messaging.requestPermission(alert: true, badge: true, sound: true);
-    await _messaging.setForegroundNotificationPresentationOptions(alert: true, badge: true, sound: true);
+    _chatSubscription = _firestore
+        .collection('chatRooms')
+        .doc('global_chat_room')
+        .collection('messages')
+        .orderBy('msgId', descending: true)
+        .limit(1)
+        .snapshots()
+        .listen((snapshot) async {
+          if (snapshot.docs.isEmpty) return;
 
-    final initialMessage = await _messaging.getInitialMessage();
-    if (initialMessage != null) {
-      navigatorKey.currentState?.pushNamed(AppRoutes.chat);
-    }
+          final data = snapshot.docs.first.data();
+          final msgId = int.tryParse('${data['msgId']}');
+          if (msgId == null) return;
 
-    FirebaseMessaging.onMessage.listen((message) async {
-      await showForegroundRemoteMessage(message);
-    });
-    FirebaseMessaging.onMessageOpenedApp.listen((_) {
-      navigatorKey.currentState?.pushNamed(AppRoutes.chat);
-    });
-  }
+          // Prime state on first snapshot to avoid notifying for older messages.
+          if (_lastObservedMsgId == null) {
+            _lastObservedMsgId = msgId;
+            return;
+          }
+          if (msgId <= _lastObservedMsgId!) return;
+          _lastObservedMsgId = msgId;
 
-  Future<void> _syncTokenForUser(String uid) async {
-    final token = await _messaging.getToken();
-    if (token == null || token.trim().isEmpty) return;
-    await _saveToken(uid, token);
-  }
+          final senderId = '${data['senderId'] ?? ''}';
+          final currentUserId = _auth.currentUser?.uid ?? '';
+          if (senderId.isNotEmpty && senderId == currentUserId) return;
 
-  Future<void> _saveToken(String uid, String token) async {
-    debugPrint('FCM token synced for user $uid: ${token.substring(0, token.length > 12 ? 12 : token.length)}...');
-    await _firestore.collection('users').doc(uid).set({
-      'fcmTokens': FieldValue.arrayUnion([token]),
-      'lastTokenUpdatedAt': FieldValue.serverTimestamp(),
-      'fcmPlatform': Platform.operatingSystem,
-    }, SetOptions(merge: true));
+          final body = '${data['content'] ?? ''}';
+          // User requested no notifications while inside the app.
+          if (_isAppResumed) return;
+          await _showLocalNotification(msgId: msgId, body: body);
+        });
   }
 
   Future<void> _showLocalNotification({required int msgId, required String body}) async {
@@ -130,18 +114,19 @@ class NotificationService {
     }
   }
 
-  static Future<void> showForegroundRemoteMessage(RemoteMessage message) async {
-    final body = message.notification?.body ?? message.data['body']?.toString() ?? 'You received a new message';
-    final msgId = int.tryParse(message.data['msgId']?.toString() ?? '') ??
-        int.tryParse(message.messageId ?? '') ??
-        DateTime.now().millisecondsSinceEpoch;
-    await instance.ensureBackgroundLocalNotificationsInitialized();
-    await instance._showLocalNotification(msgId: msgId, body: body);
-  }
-
   int _notificationIdFromMsgId(int msgId) {
     const maxAndroidNotificationId = 2147483647;
     final normalized = msgId.abs() % maxAndroidNotificationId;
     return normalized == 0 ? 1 : normalized;
+  }
+}
+
+class _LifecycleObserver with WidgetsBindingObserver {
+  _LifecycleObserver(this._service);
+  final NotificationService _service;
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _service._isAppResumed = state == AppLifecycleState.resumed;
   }
 }

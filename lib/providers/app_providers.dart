@@ -16,3 +16,29 @@ final authStateChangesProvider = StreamProvider<User?>((ref) {
 final chatMessagesProvider = StreamProvider<List<Message>>((ref) {
   return ref.watch(chatServiceProvider).getChatMessagesStream();
 });
+
+final lastReadMsgIdProvider = StateProvider<int?>((ref) => null);
+
+final hasUnreadMessagesProvider = Provider<bool>((ref) {
+  final currentUser = ref.watch(authStateChangesProvider).asData?.value;
+  final currentUserId = currentUser?.uid;
+  if (currentUserId == null || currentUserId.isEmpty) return false;
+
+  final messages = ref.watch(chatMessagesProvider).asData?.value;
+  if (messages == null || messages.isEmpty) return false;
+
+  final lastReadMsgId = ref.watch(lastReadMsgIdProvider);
+  final latestIncoming = messages.lastWhere(
+    (message) => message.senderId != currentUserId,
+    orElse: () => Message(
+      msgId: 0,
+      content: '',
+      timestamp: DateTime.fromMillisecondsSinceEpoch(0),
+      senderId: currentUserId,
+    ),
+  );
+
+  if (latestIncoming.msgId == 0) return false;
+  if (lastReadMsgId == null) return true;
+  return latestIncoming.msgId > lastReadMsgId;
+});

@@ -15,6 +15,12 @@ class ChatScreen extends ConsumerStatefulWidget {
 class _ChatScreenState extends ConsumerState<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
 
+  void _markLatestAsRead() {
+    final messages = ref.read(chatMessagesProvider).asData?.value;
+    if (messages == null || messages.isEmpty) return;
+    ref.read(lastReadMsgIdProvider.notifier).state = messages.last.msgId;
+  }
+
   @override
   void dispose() {
     _messageController.dispose();
@@ -38,6 +44,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(chatMessagesProvider);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _markLatestAsRead();
+    });
     // build UI
 
     return Scaffold(
