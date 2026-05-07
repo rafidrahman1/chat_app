@@ -131,11 +131,11 @@ class NotificationService {
   }
 
   static Future<void> showForegroundRemoteMessage(RemoteMessage message) async {
-    final notification = message.notification;
-    if (notification == null) return;
-
-    final body = notification.body ?? message.data['body']?.toString() ?? 'You received a new message';
-    final msgId = int.tryParse(message.messageId ?? '') ?? DateTime.now().millisecondsSinceEpoch;
+    final title = message.notification?.title ?? message.data['title']?.toString() ?? 'New chat message';
+    final body = message.notification?.body ?? message.data['body']?.toString() ?? 'You received a new message';
+    final msgId = int.tryParse(message.data['msgId']?.toString() ?? '') ??
+        int.tryParse(message.messageId ?? '') ??
+        DateTime.now().millisecondsSinceEpoch;
     await instance.ensureBackgroundLocalNotificationsInitialized();
     await instance._showLocalNotification(msgId: msgId, body: body);
   }
