@@ -14,23 +14,17 @@ class AuthGate extends ConsumerStatefulWidget {
 
 class _AuthGateState extends ConsumerState<AuthGate> {
   @override
-  void initState() {
-    super.initState();
-
+  Widget build(BuildContext context) {
     ref.listen(authStateChangesProvider, (previous, next) async {
       final user = next.asData?.value;
       if (user == null) return;
       await ref.read(authServiceProvider).cacheCurrentUserProfile();
     });
-  }
 
-  @override
-  Widget build(BuildContext context) {
     final authState = ref.watch(authStateChangesProvider);
     return authState.when(
       data: (user) => user != null ? const HomeScreen() : const LoginScreen(),
-      loading: () =>
-          const Scaffold(body: Center(child: CircularProgressIndicator())),
+      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (error, stackTrace) => const LoginScreen(),
     );
   }
