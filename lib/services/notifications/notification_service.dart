@@ -1,7 +1,8 @@
-import 'dart:async';
+import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
@@ -14,6 +15,7 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseMessaging _messaging = FirebaseMessaging.instance;
 
   static const AndroidNotificationChannel _chatChannel = AndroidNotificationChannel(
     'chat_messages',
@@ -23,37 +25,35 @@ class NotificationService {
   );
 
   bool _initialized = false;
-  StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _chatSubscription;
-  int? _lastSeenMessageId;
-  String? _listeningUserId;
+  bool _localNotificationsInitialized = false;
 
   Future<void> initialize(GlobalKey<NavigatorState> navigatorKey) async {
     if (_initialized) return;
     _initialized = true;
 
     await _initializeLocalNotifications(navigatorKey);
+    await _initializeFcmHandlers(navigatorKey);
 
-    _auth.authStateChanges().listen((user) {
-      _chatSubscription?.cancel();
-      _lastSeenMessageId = null;
-      _listeningUserId = user?.uid;
-
-      if (user != null) {
-        _listenForNewMessages(user.uid);
-      }
+    _auth.authStateChanges().listen((user) async {
+      if (user == null) return;
+      await _syncTokenForUser(user.uid);
+    });
+    _messaging.onTokenRefresh.listen((token) async {
+      final user = _auth.currentUser;
+      if (user == null || token.trim().isEmpty) return;
+      await _saveToken(user.uid, token);
     });
 
     final currentUser = _auth.currentUser;
     if (currentUser != null) {
-      _listeningUserId = currentUser.uid;
-      _listenForNewMessages(currentUser.uid);
+      await _syncTokenForUser(currentUser.uid);
     }
   }
 
   Future<void> _initializeLocalNotifications(GlobalKey<NavigatorState> navigatorKey) async {
+    if (_localNotificationsInitialized) return;
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const iosSettings = DarwinInitializationSettings();
-    const settings = InitializationSettings(android: androidSettings, iOS: iosSettings);
+    const settings = InitializationSettings(android: androidSettings);
 
     await _localNotifications.initialize(
       settings: settings,
@@ -61,50 +61,53 @@ class NotificationService {
         navigatorKey.currentState?.pushNamed(AppRoutes.chat);
       },
     );
-    await _localNotifications
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
-        ?.createNotificationChannel(_chatChannel);
-    await _localNotifications
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
-        ?.requestNotificationsPermission();
-    await _localNotifications.resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()?.requestPermissions(alert: true, badge: true, sound: true);
+    await _localNotifications.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()?.createNotificationChannel(_chatChannel);
+    await _localNotifications.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()?.requestNotificationsPermission();
+    _localNotificationsInitialized = true;
   }
 
-  void _listenForNewMessages(String currentUserId) {
-    _chatSubscription = _firestore
-        .collection('chatRooms')
-        .doc('global_chat_room')
-        .collection('messages')
-        .orderBy('msgId', descending: false)
-        .snapshots()
-        .listen((snapshot) async {
-          if (snapshot.docs.isEmpty) return;
+  Future<void> ensureBackgroundLocalNotificationsInitialized() async {
+    if (_localNotificationsInitialized) return;
+    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const settings = InitializationSettings(android: androidSettings);
+    await _localNotifications.initialize(settings: settings);
+    await _localNotifications.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()?.createNotificationChannel(_chatChannel);
+    _localNotificationsInitialized = true;
+  }
 
-          final newestMsgId = _parseMsgId(snapshot.docs.last.data()['msgId']);
-          if (_lastSeenMessageId == null) {
-            _lastSeenMessageId = newestMsgId;
-            return;
-          }
+  Future<void> _initializeFcmHandlers(GlobalKey<NavigatorState> navigatorKey) async {
+    await _messaging.requestPermission(alert: true, badge: true, sound: true);
+    await _messaging.setForegroundNotificationPresentationOptions(alert: true, badge: true, sound: true);
 
-          for (final doc in snapshot.docs) {
-            final data = doc.data();
-            final msgId = _parseMsgId(data['msgId']);
-            if (msgId <= (_lastSeenMessageId ?? 0)) continue;
+    final initialMessage = await _messaging.getInitialMessage();
+    if (initialMessage != null) {
+      navigatorKey.currentState?.pushNamed(AppRoutes.chat);
+    }
 
-            final senderId = (data['senderId'] ?? '').toString();
-            if (senderId == currentUserId || senderId.isEmpty) continue;
+    FirebaseMessaging.onMessage.listen((message) async {
+      await showForegroundRemoteMessage(message);
+    });
+    FirebaseMessaging.onMessageOpenedApp.listen((_) {
+      navigatorKey.currentState?.pushNamed(AppRoutes.chat);
+    });
+  }
 
-            final content = (data['content'] ?? '').toString();
-            await _showLocalNotification(msgId: msgId, body: content);
-          }
+  Future<void> _syncTokenForUser(String uid) async {
+    final token = await _messaging.getToken();
+    if (token == null || token.trim().isEmpty) return;
+    await _saveToken(uid, token);
+  }
 
-          _lastSeenMessageId = newestMsgId;
-        });
+  Future<void> _saveToken(String uid, String token) async {
+    debugPrint('FCM token synced for user $uid: ${token.substring(0, token.length > 12 ? 12 : token.length)}...');
+    await _firestore.collection('users').doc(uid).set({
+      'fcmTokens': FieldValue.arrayUnion([token]),
+      'lastTokenUpdatedAt': FieldValue.serverTimestamp(),
+      'fcmPlatform': Platform.operatingSystem,
+    }, SetOptions(merge: true));
   }
 
   Future<void> _showLocalNotification({required int msgId, required String body}) async {
-    if (_listeningUserId == null) return;
-
     const androidDetails = AndroidNotificationDetails(
       'chat_messages',
       'Chat Messages',
@@ -113,8 +116,7 @@ class NotificationService {
       priority: Priority.high,
     );
 
-    const iosDetails = DarwinNotificationDetails();
-    const details = NotificationDetails(android: androidDetails, iOS: iosDetails);
+    const details = NotificationDetails(android: androidDetails);
 
     try {
       await _localNotifications.show(
@@ -128,9 +130,14 @@ class NotificationService {
     }
   }
 
-  int _parseMsgId(dynamic value) {
-    if (value is int) return value;
-    return int.tryParse('$value') ?? 0;
+  static Future<void> showForegroundRemoteMessage(RemoteMessage message) async {
+    final notification = message.notification;
+    if (notification == null) return;
+
+    final body = notification.body ?? message.data['body']?.toString() ?? 'You received a new message';
+    final msgId = int.tryParse(message.messageId ?? '') ?? DateTime.now().millisecondsSinceEpoch;
+    await instance.ensureBackgroundLocalNotificationsInitialized();
+    await instance._showLocalNotification(msgId: msgId, body: body);
   }
 
   int _notificationIdFromMsgId(int msgId) {
