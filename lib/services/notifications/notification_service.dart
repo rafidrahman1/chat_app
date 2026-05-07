@@ -116,16 +116,26 @@ class NotificationService {
     const iosDetails = DarwinNotificationDetails();
     const details = NotificationDetails(android: androidDetails, iOS: iosDetails);
 
-    await _localNotifications.show(
-      id: msgId,
-      title: 'New chat message',
-      body: body.isEmpty ? 'You received a new message' : body,
-      notificationDetails: details,
-    );
+    try {
+      await _localNotifications.show(
+        id: _notificationIdFromMsgId(msgId),
+        title: 'New chat message',
+        body: body.isEmpty ? 'You received a new message' : body,
+        notificationDetails: details,
+      );
+    } catch (error) {
+      debugPrint('Failed to show local notification: $error');
+    }
   }
 
   int _parseMsgId(dynamic value) {
     if (value is int) return value;
     return int.tryParse('$value') ?? 0;
+  }
+
+  int _notificationIdFromMsgId(int msgId) {
+    const maxAndroidNotificationId = 2147483647;
+    final normalized = msgId.abs() % maxAndroidNotificationId;
+    return normalized == 0 ? 1 : normalized;
   }
 }

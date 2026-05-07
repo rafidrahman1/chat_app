@@ -10,25 +10,14 @@ class MessageBubble extends StatelessWidget {
   final bool endsGroup;
   final String? myPhotoUrl;
 
-  const MessageBubble({
-    super.key,
-    required this.message,
-    required this.isMe,
-    required this.startsGroup,
-    required this.endsGroup,
-    required this.myPhotoUrl,
-  });
+  const MessageBubble({super.key, required this.message, required this.isMe, required this.startsGroup, required this.endsGroup, required this.myPhotoUrl});
 
   @override
   Widget build(BuildContext context) {
     const messageColor = Colors.black;
     const textColor = Colors.white;
     final avatarUrl = isMe ? myPhotoUrl : message.senderPhotoUrl;
-    final fallbackLabel = isMe
-        ? null
-        : (message.displayName.isNotEmpty
-              ? message.displayName
-              : message.senderEmail);
+    final fallbackLabel = isMe ? null : (message.displayName.isNotEmpty ? message.displayName : message.senderEmail);
     final radius = BorderRadius.only(
       topLeft: const Radius.circular(18),
       topRight: const Radius.circular(18),
@@ -38,20 +27,14 @@ class MessageBubble extends StatelessWidget {
 
     final bubble = Container(
       constraints: const BoxConstraints(maxWidth: 280),
-      margin: EdgeInsets.only(
-        top: startsGroup ? 8 : 2,
-        bottom: endsGroup ? 8 : 2,
-      ),
+      margin: EdgeInsets.only(top: startsGroup ? 8 : 2, bottom: endsGroup ? 8 : 2),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: messageColor,
         borderRadius: radius,
         border: Border.all(color: const Color(0xFFD3D3D3), width: 1),
       ),
-      child: Text(
-        message.content,
-        style: TextStyle(fontSize: 15, color: textColor),
-      ),
+      child: Text(message.content, style: TextStyle(fontSize: 15, color: textColor)),
     );
 
     if (isMe) {
@@ -62,17 +45,9 @@ class MessageBubble extends StatelessWidget {
           bubble,
           const SizedBox(width: 6),
           Padding(
-            padding: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.only(bottom: 8),
             child: Column(
-              children: [
-                if (endsGroup)
-                  AvatarWidget(
-                    avatarUrl: avatarUrl,
-                    fallbackLabel: fallbackLabel,
-                  )
-                else
-                  const SizedBox(width: 28),
-              ],
+              children: [if (endsGroup) AvatarWidget(avatarUrl: avatarUrl, fallbackLabel: fallbackLabel) else const SizedBox(width: 28)],
             ),
           ),
         ],
@@ -82,10 +57,12 @@ class MessageBubble extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        if (endsGroup)
-          AvatarWidget(avatarUrl: avatarUrl, fallbackLabel: fallbackLabel)
-        else
-          const SizedBox(width: 28),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Column(
+            children: [if (endsGroup) AvatarWidget(avatarUrl: avatarUrl, fallbackLabel: fallbackLabel) else const SizedBox(width: 28)],
+          ),
+        ),
         const SizedBox(width: 6),
         bubble,
       ],
