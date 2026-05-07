@@ -8,9 +8,12 @@ import 'message_bubble.dart';
 class MessagesList extends StatefulWidget {
   final ChatService chatService;
   final AuthService authService;
-  final String peerAvatarUrl;
 
-  const MessagesList({super.key, required this.chatService, required this.authService, required this.peerAvatarUrl});
+  const MessagesList({
+    super.key,
+    required this.chatService,
+    required this.authService,
+  });
 
   @override
   State<MessagesList> createState() => _MessagesListState();
@@ -46,7 +49,11 @@ class _MessagesListState extends State<MessagesList> {
     final target = _scrollController.position.maxScrollExtent;
 
     if (animated) {
-      _scrollController.animateTo(target, duration: const Duration(milliseconds: 250), curve: Curves.easeOut);
+      _scrollController.animateTo(
+        target,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+      );
     } else {
       _scrollController.jumpTo(target);
     }
@@ -66,7 +73,9 @@ class _MessagesListState extends State<MessagesList> {
       stream: widget.chatService.getChatMessagesStream(),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
-          return const Center(child: Text('Something went wrong loading messages.'));
+          return const Center(
+            child: Text('Something went wrong loading messages.'),
+          );
         }
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
@@ -74,7 +83,9 @@ class _MessagesListState extends State<MessagesList> {
 
         final messages = snapshot.data!;
         if (messages.isEmpty) {
-          return const Center(child: Text('No messages yet. Start the conversation!'));
+          return const Center(
+            child: Text('No messages yet. Start the conversation!'),
+          );
         }
 
         final hasNewMessage = messages.length > _lastMessageCount;
@@ -98,8 +109,12 @@ class _MessagesListState extends State<MessagesList> {
               itemBuilder: (context, index) {
                 final message = messages[index];
                 final isMe = message.senderId == currentUserId;
-                final previousSender = index > 0 ? messages[index - 1].senderId : null;
-                final nextSender = index < messages.length - 1 ? messages[index + 1].senderId : null;
+                final previousSender = index > 0
+                    ? messages[index - 1].senderId
+                    : null;
+                final nextSender = index < messages.length - 1
+                    ? messages[index + 1].senderId
+                    : null;
                 final startsGroup = previousSender != message.senderId;
                 final endsGroup = nextSender != message.senderId;
                 return MessageBubble(
@@ -108,7 +123,6 @@ class _MessagesListState extends State<MessagesList> {
                   startsGroup: startsGroup,
                   endsGroup: endsGroup,
                   myPhotoUrl: widget.authService.currentUser?.photoURL,
-                  peerAvatarUrl: widget.peerAvatarUrl,
                 );
               },
             ),
@@ -116,7 +130,10 @@ class _MessagesListState extends State<MessagesList> {
               Positioned(
                 right: 12,
                 bottom: 12,
-                child: FloatingActionButton.small(onPressed: () => _scrollToBottom(), child: const Icon(Icons.keyboard_arrow_down)),
+                child: FloatingActionButton.small(
+                  onPressed: () => _scrollToBottom(),
+                  child: const Icon(Icons.keyboard_arrow_down),
+                ),
               ),
           ],
         );

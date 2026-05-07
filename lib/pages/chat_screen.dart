@@ -16,8 +16,6 @@ class _ChatScreenState extends State<ChatScreen> {
   final ChatService _chatService = ChatService();
   final AuthService _authService = AuthService();
   final TextEditingController _messageController = TextEditingController();
-  static const String _peerAvatarUrl =
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuB7k2Pn9IVwL3N9QBk8FxxLqgw1akTQh6f4qkq5iWwW0Q3ifBxbOW9hN8xCBu7S9E8KYnC4QhQvL4AwPZ5uw7m9YfWl3nTQYwQ6w8b7';
 
   @override
   void dispose() {
@@ -34,7 +32,9 @@ class _ChatScreenState extends State<ChatScreen> {
       _messageController.clear();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to send: $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to send: $e')));
     }
   }
 
@@ -50,12 +50,17 @@ class _ChatScreenState extends State<ChatScreen> {
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
         titleSpacing: 0,
-        actions: [IconButton(onPressed: () {}, icon: const Icon(Icons.info_outline))],
+        actions: [
+          IconButton(onPressed: () {}, icon: const Icon(Icons.info_outline)),
+        ],
       ),
       body: Column(
         children: [
           Expanded(
-            child: MessagesList(chatService: _chatService, authService: _authService, peerAvatarUrl: _peerAvatarUrl),
+            child: MessagesList(
+              chatService: _chatService,
+              authService: _authService,
+            ),
           ),
           MessageInput(controller: _messageController, onSend: _sendMessage),
         ],

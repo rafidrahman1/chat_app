@@ -13,7 +13,31 @@ class ChatService {
 
   // helper to get messages collection reference for the global room
   CollectionReference<Map<String, dynamic>> get _messagesCollection {
-    return _firestore.collection('chatRooms').doc(_globalChatRoomId).collection('messages');
+    return _firestore
+        .collection('chatRooms')
+        .doc(_globalChatRoomId)
+        .collection('messages');
+  }
+
+  String _normalizePhotoUrl(String? url) {
+    final trimmed = (url ?? '').trim();
+    if (trimmed.isEmpty) return '';
+    if (trimmed.startsWith('http://')) {
+      return trimmed.replaceFirst('http://', 'https://');
+    }
+    return trimmed;
+  }
+
+  String _resolveSenderPhotoUrl(User user) {
+    final direct = _normalizePhotoUrl(user.photoURL);
+    if (direct.isNotEmpty) return direct;
+
+    for (final profile in user.providerData) {
+      final providerUrl = _normalizePhotoUrl(profile.photoURL);
+      if (providerUrl.isNotEmpty) return providerUrl;
+    }
+
+    return '';
   }
 
   //send message to the single global chat room. The receiverEmail parameter is ignored
@@ -22,15 +46,28 @@ class ChatService {
     // ensure user is signed in
     final user = _auth.currentUser;
     if (user == null) {
-      throw FirebaseAuthException(code: 'NO_CURRENT_USER', message: 'No authenticated user to send a message');
+      throw FirebaseAuthException(
+        code: 'NO_CURRENT_USER',
+        message: 'No authenticated user to send a message',
+      );
     }
 
     final String currentUserID = user.uid;
     final String displayName = user.displayName ?? 'Anonymous';
+    final String senderPhotoUrl = _resolveSenderPhotoUrl(user);
+    final String senderEmail = user.email ?? '';
     final Timestamp timestamp = Timestamp.now();
 
     //create newMessage
-    Message newMessage = Message(msgId: timestamp.millisecondsSinceEpoch, content: message, timestamp: timestamp.toDate(), senderId: currentUserID, displayName: displayName);
+    Message newMessage = Message(
+      msgId: timestamp.millisecondsSinceEpoch,
+      content: message,
+      timestamp: timestamp.toDate(),
+      senderId: currentUserID,
+      displayName: displayName,
+      senderPhotoUrl: senderPhotoUrl,
+      senderEmail: senderEmail,
+    );
 
     // write message to Firestore under the single chat room
     await _messagesCollection.add(newMessage.toMap());
@@ -38,6 +75,12 @@ class ChatService {
 
   // Stream of messages from the single global chat room, ordered by msgId (ascending)
   Stream<List<Message>> getChatMessagesStream() {
-    return _messagesCollection.orderBy('msgId', descending: false).snapshots().map((snapshot) => snapshot.docs.map((doc) => Message.fromMap(doc.data())).toList());
+    return _messagesCollection
+        .orderBy('msgId', descending: false)
+        .snapshots()
+        .map(
+          (snapshot) =>
+              snapshot.docs.map((doc) => Message.fromMap(doc.data())).toList(),
+        );
   }
 }
