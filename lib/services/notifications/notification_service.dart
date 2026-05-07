@@ -131,7 +131,6 @@ class NotificationService {
   }
 
   static Future<void> showForegroundRemoteMessage(RemoteMessage message) async {
-    final title = message.notification?.title ?? message.data['title']?.toString() ?? 'New chat message';
     final body = message.notification?.body ?? message.data['body']?.toString() ?? 'You received a new message';
     final msgId = int.tryParse(message.data['msgId']?.toString() ?? '') ??
         int.tryParse(message.messageId ?? '') ??
