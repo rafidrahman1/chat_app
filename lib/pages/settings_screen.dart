@@ -25,23 +25,37 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Future<void> _saveName(User user) async {
     final newName = _nameController.text.trim();
     if (newName.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter a name')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please enter a name')));
       return;
     }
 
     setState(() => _saving = true);
     try {
-      await ref.read(userServiceProvider).upsertUserProfile(uid: user.uid, displayName: newName, photoUrl: user.photoURL ?? '');
+      await ref
+          .read(userServiceProvider)
+          .upsertUserProfile(
+            uid: user.uid,
+            displayName: newName,
+            photoUrl: user.photoURL ?? '',
+          );
       await user.updateDisplayName(newName);
       await user.reload();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Name updated')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Name updated')));
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message ?? 'Unable to update name')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message ?? 'Unable to update name')),
+      );
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Unable to update name')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Unable to update name')));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -68,7 +82,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       );
     }
 
-    final profileName = user == null ? '' : (profiles?[user.uid]?.displayName.trim() ?? '');
+    final profileName = user == null
+        ? ''
+        : (profiles?[user.uid]?.displayName.trim() ?? '');
     final authName = (user?.displayName ?? '').trim();
     final currentName = profileName.isNotEmpty ? profileName : authName;
 
@@ -82,54 +98,96 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       appBar: AppBar(title: const Text('Settings')),
       body: user == null
           ? const Center(child: Text('Please sign in to edit your name.'))
-          : Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Your name', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _nameController,
-                    decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'Enter your name'),
-                    textInputAction: TextInputAction.done,
-                    onSubmitted: (_) => _saveName(user),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-
+          : ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                _SectionCard(
+                  title: 'Your name',
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.only(right: 3),
+                      TextField(
+                        controller: _nameController,
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                          hintText: 'Enter your name',
+                        ),
+                        textInputAction: TextInputAction.done,
+                        onSubmitted: (_) => _saveName(user),
+                      ),
+                      const SizedBox(height: 12),
+                      Align(
+                        alignment: Alignment.centerRight,
                         child: ElevatedButton(
                           onPressed: _saving ? null : () => _saveName(user),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: colorScheme.primary,
-                            side: const BorderSide(color: Colors.white, width: 2),
-                          ),
+                          style: _primaryButtonStyle(colorScheme),
                           child: _saving
-                              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                              : const Text('Save', style: TextStyle(color: Colors.white)),
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Text(
+                                  'Save',
+                                  style: TextStyle(color: Colors.white),
+                                ),
                         ),
                       ),
                     ],
                   ),
-
-                  SizedBox(height: 24),
-                  Text('Sync User Items', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                  SizedBox(height: 8),
-                  ElevatedButton(
+                ),
+                const SizedBox(height: 14),
+                _SectionCard(
+                  title: 'Sync User Items',
+                  child: ElevatedButton(
                     onPressed: () async {},
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: colorScheme.primary,
-                      side: const BorderSide(color: Colors.white, width: 2),
+                    style: _primaryButtonStyle(colorScheme),
+                    child: const Text(
+                      'Sync Now',
+                      style: TextStyle(color: Colors.white),
                     ),
-                    child: const Text('Sync Now', style: TextStyle(color: Colors.white)),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
+    );
+  }
+
+  ButtonStyle _primaryButtonStyle(ColorScheme colorScheme) {
+    return ElevatedButton.styleFrom(
+      backgroundColor: colorScheme.primary,
+      side: const BorderSide(color: Colors.white, width: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    );
+  }
+}
+
+class _SectionCard extends StatelessWidget {
+  final String title;
+  final Widget child;
+
+  const _SectionCard({required this.title, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 10),
+            child,
+          ],
+        ),
+      ),
     );
   }
 }

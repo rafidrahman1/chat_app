@@ -5,26 +5,30 @@ import 'package:google_sign_in/google_sign_in.dart';
 import '../../core/firestore_paths.dart';
 
 class AuthService {
-  //instance of the auth
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth;
+  final FirebaseFirestore _firestore;
+
+  AuthService({FirebaseAuth? auth, FirebaseFirestore? firestore})
+    : _auth = auth ?? FirebaseAuth.instance,
+      _firestore = firestore ?? FirebaseFirestore.instance;
 
   //get current user
   User? get currentUser => _auth.currentUser;
 
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
-  //Sign in with google
   Future<User?> signInWithGoogle() async {
     try {
       await GoogleSignIn.instance.initialize();
-      // Trigger the authentication flow
-      final GoogleSignInAccount googleUser = await GoogleSignIn.instance.authenticate();
-
+      final GoogleSignInAccount googleUser = await GoogleSignIn.instance
+          .authenticate();
       final GoogleSignInAuthentication googleAuth = googleUser.authentication;
-      final credential = GoogleAuthProvider.credential(idToken: googleAuth.idToken);
-
-      final userCredential = await _auth.signInWithCredential(credential);
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        idToken: googleAuth.idToken,
+      );
+      final UserCredential userCredential = await _auth.signInWithCredential(
+        credential,
+      );
       final user = userCredential.user;
       if (user != null) {
         await _cacheUserProfile(user);
@@ -37,12 +41,21 @@ class AuthService {
 
   Future<void> _cacheUserProfile(User user) async {
     final photoUrl = (user.photoURL ?? '').trim();
-    final docRef = _firestore.collection(FirestorePaths.usersCollection).doc(user.uid);
+    final docRef = _firestore
+        .collection(FirestorePaths.usersCollection)
+        .doc(user.uid);
     final snapshot = await docRef.get();
-    final existingDisplayName = '${snapshot.data()?['displayName'] ?? ''}'.trim();
-    final displayName = existingDisplayName.isNotEmpty ? existingDisplayName : (user.displayName ?? '').trim();
+    final existingDisplayName = '${snapshot.data()?['displayName'] ?? ''}'
+        .trim();
+    final displayName = existingDisplayName.isNotEmpty
+        ? existingDisplayName
+        : (user.displayName ?? '').trim();
 
-    await docRef.set({'displayName': displayName, 'photoUrl': photoUrl, 'updatedAt': FieldValue.serverTimestamp()}, SetOptions(merge: true));
+    await docRef.set({
+      'displayName': displayName,
+      'photoUrl': photoUrl,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 
   Future<void> cacheCurrentUserProfile() async {
@@ -51,7 +64,6 @@ class AuthService {
     await _cacheUserProfile(user);
   }
 
-  //sign out
   Future<void> signOut() async {
     await GoogleSignIn.instance.signOut();
     await _auth.signOut();
