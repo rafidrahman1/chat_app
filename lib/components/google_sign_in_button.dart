@@ -13,7 +13,8 @@ class GoogleSignInButton extends ConsumerWidget {
 
     Future<void> handleGoogleSignIn() async {
       try {
-        await ref.read(authServiceProvider).signInWithGoogle();
+        final user = await ref.read(authServiceProvider).signInWithGoogle();
+        if (user == null) return;
       } catch (e) {
         if (!context.mounted) return;
         ScaffoldMessenger.of(
