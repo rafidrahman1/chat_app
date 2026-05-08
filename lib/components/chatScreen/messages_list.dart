@@ -59,9 +59,6 @@ class _MessagesListState extends ConsumerState<MessagesList> {
     final currentUserId = currentUser?.uid;
     final messagesState = ref.watch(chatMessagesProvider);
     final profiles = ref.watch(userProfilesProvider).asData?.value ?? const {};
-    final currentUserProfileName = currentUserId == null ? '' : profiles[currentUserId]?.displayName.trim() ?? '';
-    final currentUserAuthName = (currentUser?.displayName ?? '').trim();
-    final currentUserName = currentUserProfileName.isNotEmpty ? currentUserProfileName : (currentUserAuthName.isNotEmpty ? currentUserAuthName : 'You');
 
     return messagesState.when(
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -95,7 +92,9 @@ class _MessagesListState extends ConsumerState<MessagesList> {
                 final senderProfile = profiles[message.senderId];
                 final avatarUrl = isMe ? currentUser?.photoURL : senderProfile?.photoUrl;
                 final fallbackLabel = isMe ? null : (senderProfile?.displayName.isNotEmpty == true ? senderProfile!.displayName : null);
-                final senderName = isMe ? currentUserName : (senderProfile?.displayName.trim().isNotEmpty == true ? senderProfile!.displayName.trim() : null);
+                final senderName = isMe
+                    ? ((currentUser?.displayName ?? '').trim().isNotEmpty ? (currentUser?.displayName ?? '').trim() : 'You')
+                    : (senderProfile?.displayName.trim().isNotEmpty == true ? senderProfile!.displayName.trim() : null);
                 final previousSender = index > 0 ? messages[index - 1].senderId : null;
                 final nextSender = index < messages.length - 1 ? messages[index + 1].senderId : null;
                 final startsGroup = previousSender != message.senderId;

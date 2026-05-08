@@ -70,6 +70,9 @@ flutter:
 
   # Local persistence for simple settings like user name
   # Run `flutter pub get` after this change
+  # Added for settings persistence
+  dependencies:
+    shared_preferences: ^2.0.15
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
