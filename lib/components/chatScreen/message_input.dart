@@ -3,8 +3,14 @@ import 'package:flutter/material.dart';
 class MessageInput extends StatelessWidget {
   final TextEditingController controller;
   final VoidCallback onSend;
+  final VoidCallback onCreatePoll;
 
-  const MessageInput({super.key, required this.controller, required this.onSend});
+  const MessageInput({
+    super.key,
+    required this.controller,
+    required this.onSend,
+    required this.onCreatePoll,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -14,6 +20,11 @@ class MessageInput extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(10, 6, 10, 10),
         child: Row(
           children: [
+            IconButton(
+              onPressed: onCreatePoll,
+              icon: const Icon(Icons.poll_outlined),
+              tooltip: 'Create poll',
+            ),
             Expanded(
               child: TextField(
                 controller: controller,
@@ -22,7 +33,10 @@ class MessageInput extends StatelessWidget {
                 onSubmitted: (_) => onSend(),
                 decoration: InputDecoration(
                   hintText: 'Aa',
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 11,
+                  ),
                   filled: true,
                   fillColor: colorScheme.surface,
                   border: OutlineInputBorder(
@@ -35,7 +49,10 @@ class MessageInput extends StatelessWidget {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide(color: colorScheme.secondary, width: 2),
+                    borderSide: BorderSide(
+                      color: colorScheme.secondary,
+                      width: 2,
+                    ),
                   ),
                 ),
               ),

@@ -20,6 +20,10 @@ class AppTheme {
       onSurface: Colors.white,
       tertiary: Colors.grey,
     ),
+    textTheme: ThemeData.dark().textTheme.apply(
+      bodyColor: Colors.white,
+      displayColor: Colors.white,
+    ),
     appBarTheme: const AppBarTheme(
       backgroundColor: primaryBlack,
       foregroundColor: Colors.white,
@@ -37,6 +41,17 @@ class AppTheme {
       border: const OutlineInputBorder(
         borderRadius: BorderRadius.all(Radius.circular(8)),
       ),
+    ),
+    chipTheme: const ChipThemeData(
+      labelStyle: TextStyle(color: Colors.white),
+      secondaryLabelStyle: TextStyle(color: Colors.white),
+      backgroundColor: primaryBlack,
+      disabledColor: Colors.grey,
+      selectedColor: secondaryRed,
+      secondarySelectedColor: secondaryRed,
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      shape: StadiumBorder(),
+      brightness: Brightness.dark,
     ),
   );
 }

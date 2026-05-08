@@ -17,10 +17,7 @@ class ChatService {
         .collection(FirestorePaths.messagesCollection);
   }
 
-  //send message to the single global chat room. The receiverEmail parameter is ignored
-  //to keep compatibility with existing callers.
-  Future<void> sendMessage(String receiverEmail, String message) async {
-    // ensure user is signed in
+  Future<String> _requireCurrentUserId() async {
     final user = _auth.currentUser;
     if (user == null) {
       throw FirebaseAuthException(
@@ -28,31 +25,123 @@ class ChatService {
         message: 'No authenticated user to send a message',
       );
     }
+    return user.uid;
+  }
 
-    final String currentUserID = user.uid;
+  //send message to the single global chat room. The receiverEmail parameter is ignored
+  //to keep compatibility with existing callers.
+  Future<void> sendMessage(String receiverEmail, String message) async {
+    await sendTextMessage(message);
+  }
+
+  Future<void> sendTextMessage(String message) async {
+    final String currentUserID = await _requireCurrentUserId();
     final Timestamp timestamp = Timestamp.now();
 
-    //create newMessage
     final newMessage = Message(
+      docId: '',
       msgId: timestamp.millisecondsSinceEpoch,
       content: message,
       timestamp: timestamp.toDate(),
       senderId: currentUserID,
     );
 
-    // write message to Firestore under the single chat room
     await _messagesCollection.add(newMessage.toMap());
   }
 
-  // Stream of messages from the single global chat room, ordered by msgId (ascending)
+  Future<void> sendYesNoPoll(String question) async {
+    final String currentUserID = await _requireCurrentUserId();
+    final Timestamp timestamp = Timestamp.now();
+
+    final pollMessage = Message(
+      docId: '',
+      msgId: timestamp.millisecondsSinceEpoch,
+      content: '',
+      timestamp: timestamp.toDate(),
+      senderId: currentUserID,
+      type: 'poll',
+      pollQuestion: question.trim(),
+      pollVotes: const {'yes': 0, 'no': 0},
+    );
+
+    await _messagesCollection.add(pollMessage.toMap());
+  }
+
+  Future<void> toggleReaction({
+    required String messageDocId,
+    required String emoji,
+  }) async {
+    final String currentUserID = await _requireCurrentUserId();
+    final docRef = _messagesCollection.doc(messageDocId);
+
+    await _firestore.runTransaction((transaction) async {
+      final snapshot = await transaction.get(docRef);
+      final data = snapshot.data() ?? <String, dynamic>{};
+      final reactionsByUser =
+          (data['reactionsByUser'] as Map<String, dynamic>? ?? {}).map(
+            (k, v) => MapEntry('$k', '$v'),
+          );
+      final current = reactionsByUser[currentUserID];
+
+      if (current == emoji) {
+        reactionsByUser.remove(currentUserID);
+      } else {
+        reactionsByUser[currentUserID] = emoji;
+      }
+
+      transaction.set(docRef, {
+        'reactionsByUser': reactionsByUser,
+      }, SetOptions(merge: true));
+    });
+  }
+
+  Future<void> voteYesNoPoll({
+    required String messageDocId,
+    required bool voteYes,
+  }) async {
+    final String currentUserID = await _requireCurrentUserId();
+    final voteValue = voteYes ? 'yes' : 'no';
+    final docRef = _messagesCollection.doc(messageDocId);
+
+    await _firestore.runTransaction((transaction) async {
+      final snapshot = await transaction.get(docRef);
+      final data = snapshot.data() ?? <String, dynamic>{};
+      final pollVotes =
+          (data['pollVotes'] as Map<String, dynamic>? ?? {'yes': 0, 'no': 0})
+              .map((k, v) => MapEntry('$k', (v as num?)?.toInt() ?? 0));
+      final votesByUser =
+          (data['pollVotesByUser'] as Map<String, dynamic>? ?? {}).map(
+            (k, v) => MapEntry('$k', '$v'),
+          );
+
+      final previous = votesByUser[currentUserID];
+      if (previous == voteValue) {
+        return;
+      }
+
+      if (previous != null) {
+        pollVotes[previous] = (pollVotes[previous] ?? 0) - 1;
+      }
+
+      votesByUser[currentUserID] = voteValue;
+      pollVotes[voteValue] = (pollVotes[voteValue] ?? 0) + 1;
+      pollVotes.updateAll((_, count) => count < 0 ? 0 : count);
+
+      transaction.set(docRef, {
+        'pollVotes': pollVotes,
+        'pollVotesByUser': votesByUser,
+      }, SetOptions(merge: true));
+    });
+  }
+
   Stream<List<Message>> getChatMessagesStream() {
     return _messagesCollection
         .orderBy('msgId', descending: false)
         .snapshots()
         .map(
-          (snapshot) =>
-              snapshot.docs.map((doc) => Message.fromMap(doc.data())).toList(),
+          (snapshot) => snapshot.docs
+              .map((doc) => Message.fromMap(doc.data(), docId: doc.id))
+              .toList(),
         );
   }
-
 }

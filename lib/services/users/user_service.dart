@@ -23,15 +23,28 @@ class UserService {
     required String uid,
     required String displayName,
     required String photoUrl,
+    String? nickname,
+    String? favoriteAgent,
+    String? role,
   }) async {
-    await _usersCollection.doc(uid).set(
-      {
-        'displayName': displayName.trim(),
-        'photoUrl': photoUrl.trim(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      },
-      SetOptions(merge: true),
-    );
+    await _usersCollection.doc(uid).set({
+      'displayName': displayName.trim(),
+      'photoUrl': photoUrl.trim(),
+      if (nickname != null) 'nickname': nickname.trim(),
+      if (favoriteAgent != null) 'favoriteAgent': favoriteAgent.trim(),
+      if (role != null) 'role': role.trim(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
+  Future<void> setOnlineStatus({
+    required String uid,
+    required bool isOnline,
+  }) async {
+    await _usersCollection.doc(uid).set({
+      'isOnline': isOnline,
+      'lastSeenAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 }
-

@@ -13,12 +13,24 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _nicknameController = TextEditingController();
+  final TextEditingController _favoriteAgentController =
+      TextEditingController();
+  final TextEditingController _roleController = TextEditingController();
   bool _hasSeededController = false;
   bool _saving = false;
 
-  void _seedController(String name) {
+  void _seedController({
+    required String name,
+    required String nickname,
+    required String favoriteAgent,
+    required String role,
+  }) {
     if (_hasSeededController) return;
     _nameController.text = name;
+    _nicknameController.text = nickname;
+    _favoriteAgentController.text = favoriteAgent;
+    _roleController.text = role;
     _hasSeededController = true;
   }
 
@@ -39,6 +51,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             uid: user.uid,
             displayName: newName,
             photoUrl: user.photoURL ?? '',
+            nickname: _nicknameController.text.trim(),
+            favoriteAgent: _favoriteAgentController.text.trim(),
+            role: _roleController.text.trim(),
           );
       await user.updateDisplayName(newName);
       await user.reload();
@@ -64,6 +79,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   @override
   void dispose() {
     _nameController.dispose();
+    _nicknameController.dispose();
+    _favoriteAgentController.dispose();
+    _roleController.dispose();
     super.dispose();
   }
 
@@ -87,10 +105,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         : (profiles?[user.uid]?.displayName.trim() ?? '');
     final authName = (user?.displayName ?? '').trim();
     final currentName = profileName.isNotEmpty ? profileName : authName;
+    final currentNickname = user == null
+        ? ''
+        : (profiles?[user.uid]?.nickname ?? '');
+    final currentFavoriteAgent = user == null
+        ? ''
+        : (profiles?[user.uid]?.favoriteAgent ?? '');
+    final currentRole = user == null ? '' : (profiles?[user.uid]?.role ?? '');
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        _seedController(currentName);
+        _seedController(
+          name: currentName,
+          nickname: currentNickname,
+          favoriteAgent: currentFavoriteAgent,
+          role: currentRole,
+        );
       }
     });
 
@@ -102,7 +132,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               padding: const EdgeInsets.all(16),
               children: [
                 _SectionCard(
-                  title: 'Your name',
+                  title: 'Profile',
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -114,6 +144,33 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         ),
                         textInputAction: TextInputAction.done,
                         onSubmitted: (_) => _saveName(user),
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: _nicknameController,
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                          hintText: 'Nickname (e.g. Deadshot)',
+                        ),
+                        textInputAction: TextInputAction.next,
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: _favoriteAgentController,
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                          hintText: 'Favorite agent (e.g. Jett)',
+                        ),
+                        textInputAction: TextInputAction.next,
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: _roleController,
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                          hintText: 'Role (e.g. Duelist)',
+                        ),
+                        textInputAction: TextInputAction.done,
                       ),
                       const SizedBox(height: 12),
                       Align(
