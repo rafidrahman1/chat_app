@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -15,16 +17,23 @@ class ChatScreen extends ConsumerStatefulWidget {
 
 class _ChatScreenState extends ConsumerState<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
+  AppLifecycleState? _lastLifecycleState;
+  late final _ChatLifecycleObserver _lifecycleObserver;
+  Timer? _presenceHeartbeat;
   bool _presenceSetOnline = false;
 
   @override
   void initState() {
     super.initState();
+    _lifecycleObserver = _ChatLifecycleObserver(_onLifecycleChanged);
+    WidgetsBinding.instance.addObserver(_lifecycleObserver);
     WidgetsBinding.instance.addPostFrameCallback((_) => _setPresence(true));
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(_lifecycleObserver);
+    _presenceHeartbeat?.cancel();
     _setPresence(false);
     _messageController.dispose();
     super.dispose();
@@ -99,12 +108,35 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if (isOnline && _presenceSetOnline) return;
     final user = ref.read(authStateChangesProvider).asData?.value;
     if (user == null) return;
-    if (isOnline) _presenceSetOnline = true;
+    _presenceSetOnline = isOnline;
+    if (isOnline) {
+      _presenceHeartbeat ??= Timer.periodic(const Duration(minutes: 1), (_) {
+        _setPresence(true);
+      });
+    } else {
+      _presenceHeartbeat?.cancel();
+      _presenceHeartbeat = null;
+    }
     try {
       await ref
           .read(userServiceProvider)
           .setOnlineStatus(uid: user.uid, isOnline: isOnline);
     } catch (_) {}
+  }
+
+  void _onLifecycleChanged(AppLifecycleState state) {
+    if (_lastLifecycleState == state) return;
+    _lastLifecycleState = state;
+    if (state == AppLifecycleState.resumed) {
+      _setPresence(true);
+      return;
+    }
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.detached ||
+        state == AppLifecycleState.hidden) {
+      _setPresence(false);
+    }
   }
 
   @override
@@ -142,4 +174,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   // Message row and avatar builders were moved to separate widgets in lib/pages/widgets/
+}
+
+class _ChatLifecycleObserver extends WidgetsBindingObserver {
+  final ValueChanged<AppLifecycleState> onChanged;
+
+  _ChatLifecycleObserver(this.onChanged);
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    onChanged(state);
+  }
 }

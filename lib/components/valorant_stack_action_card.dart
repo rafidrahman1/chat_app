@@ -35,6 +35,7 @@ class ValorantStackActionCard extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),
+          side: const BorderSide(color: Colors.red, width: 2),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
